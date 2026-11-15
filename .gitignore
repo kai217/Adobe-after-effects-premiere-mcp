@@ -5,3 +5,5 @@ library/
 C:*
 *.log
 .last_start.json
+dist/
+*.bak

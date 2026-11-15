@@ -39,6 +39,7 @@ Illustrator -> After Effects (il_to_ae)
 - "Create Shapes from Vector Layer" turns each layer into an editable shape layer (the original vector layer is switched off).
   Gradients, effects, raster images and some blend modes don't convert; those layers stay as vector footage.
 - Sublayers are flattened into their parent layer on import.
+- Live text does not convert: outline it first (il_to_ae does this in the exported copy only).
 
 Image Trace (il_trace)
 - `placedItem.trace()` returns a PluginItem; `tracing.tracingOptions.loadFromPreset(name)` uses the preset names shown in the

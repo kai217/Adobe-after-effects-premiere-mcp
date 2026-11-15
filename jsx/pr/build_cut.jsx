@@ -13,13 +13,16 @@ function snap(x) { return Math.round(x * fps) / fps; }
 for (var i = 0; i < segs.length; i++) {
   var s = segs[i], it = KAI.item(s.item), a = snap(s['in']), b = snap(s.out);
   if (b - a < fr) continue;
-  it.setInPoint(a, 4); it.setOutPoint(b, 4);
+  // In/out are set in the SOURCE frame grid and Premiere floors them to the frame below: snap to the source rate and nudge half a source frame
+    // (0-2s of 29.97 footage gives all 60 frames, not 59; 30 fps footage in a 29.97 sequence lands on its own frames)
+    var sf = fps; try { var fi = it.getFootageInterpretation(); if (fi && fi.frameRate > 1) sf = fi.frameRate; } catch (e) {}
+    it.setInPoint(Math.round(s['in'] * sf) / sf + 0.5 / sf, 4); it.setOutPoint(Math.round(s.out * sf) / sf + 0.5 / sf, 4);
   seq.videoTracks[0].overwriteClip(it, pos);
   it.clearInPoint(4); it.clearOutPoint(4);
   var vc = seq.videoTracks[0].clips[seq.videoTracks[0].clips.numItems - 1];
   if (vc && Math.abs(vc.start.seconds - pos) > 0.5 / fps) { /* placed somewhere unexpected */ }
   if (s.label) { try { vc.name = s.label; } catch (e) {} }
-  placed.push({ i: i, item: it.name, src: [a, b], at: snap(pos), len: snap(b - a) });
+  placed.push({ i: i, item: it.name, src: [a, b], at: snap(pos), len: vc ? snap(vc.end.seconds - vc.start.seconds) : snap(b - a) });
   pos = vc ? vc.end.seconds + (ARGS.gap || 0) : snap(pos + (b - a) + (ARGS.gap || 0)); // chain from the real clip end: avoids 1-frame gaps from rounding
 }
 // audio:false removes the linked audio (disabling it left the clips on A1 and kept the sequence one frame longer than the picture)

@@ -1,15 +1,28 @@
 # adobe-after-effects-premiere-mcp
-**Adobe After Effects + Premiere Pro MCP server for Claude** (plus Illustrator). Control After Effects and Premiere Pro with AI: build edits, comps, captions, color and motion graphics from plain-English requests.
+**Adobe After Effects + Premiere Pro MCP server for Claude and ChatGPT** (plus Illustrator). Control After Effects and Premiere Pro with AI: build edits, comps, captions, color and motion graphics from plain-English requests.
 
 Lets Claude work inside your running **After Effects, Premiere Pro and Illustrator** in the background (no screen takeover).
 One server, three apps, two bridges: ExtendScript through the CEP bridge (every app) and modern **UXP** for Premiere Pro.
 
-Install: double-click `install.bat`, then fully restart the Claude desktop app, After Effects and Premiere Pro.
-In After Effects turn on Edit > Preferences > Scripting & Expressions > "Allow Scripts to Write Files and Access Network".
+## Demo
+Every clip below was built by Claude through this MCP, from plain-English requests, with nothing done by hand in the apps.
+The After Effects pieces are original motion graphics with editable projects (each shot in its own comp); the Premiere piece is cut and graded from free [Pexels](https://www.pexels.com/) footage.
+Videos: see the [Demo release](../../releases/tag/demo) (each AE piece has a final render and a breakdown: wireframe, final and timeline).
 
-`install.bat` registers the MCP server with Claude and installs the **KAI MCP Bridge** panel into both apps
-(it links `cep/` into Adobe's CEP extensions folder and sets PlayerDebugMode so the unsigned panel can load).
-The bridge starts by itself when an app opens; Window > Extensions (Legacy) > KAI MCP Bridge shows its status.
+## Install (Windows)
+1. Install After Effects, Premiere Pro and/or Illustrator (2025 or newer), and the Claude desktop app or the ChatGPT desktop app.
+2. Download this repo (Code > Download ZIP), unzip it, and double-click `install.bat`. It installs Node.js if needed.
+3. Fully quit and reopen Claude/ChatGPT and the Adobe apps.
+4. In After Effects turn on Edit > Preferences > Scripting & Expressions > "Allow Scripts to Write Files and Access Network".
+5. In Premiere open Window > UXP Plugins > KAI MCP Bridge (UXP) once.
+6. Ask Claude or ChatGPT: "run kai_doctor". It reports every app as connected or says what is missing.
+
+`install.bat` registers the MCP server with the Claude desktop app (`claude_desktop_config.json`) and, when ChatGPT desktop or Codex
+is installed, with ChatGPT/Codex (`~/.codex/config.toml`, shared by the ChatGPT desktop app, the Codex CLI and the IDE extension).
+It installs the **KAI MCP Bridge** panel into After Effects, Premiere and Illustrator (links `cep/` into Adobe's CEP extensions
+folder and sets PlayerDebugMode so the unsigned panel can load), and packs and installs the UXP plugin for Premiere through
+Creative Cloud's plugin installer. The bridge starts by itself when an app opens; Window > Extensions (Legacy) > KAI MCP Bridge shows its status.
+Other MCP clients (Cursor, VS Code, Claude Code...): point them at `node <install folder>\server.js` over stdio.
 
 ## How it talks to the apps
 Two bridges, same file-queue design (any number of Claude sessions can share them; no ports):

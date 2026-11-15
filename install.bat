@@ -1,7 +1,7 @@
 @echo off
 setlocal
-title KAI-AE-MCP installer (After Effects + Premiere Pro)
-echo === KAI-AE-MCP: After Effects MCP for Claude ===
+title KAI-AE-MCP installer (After Effects + Premiere Pro + Illustrator)
+echo === KAI-AE-MCP: After Effects + Premiere Pro + Illustrator MCP for Claude and ChatGPT ===
 where node >nul 2>nul
 if errorlevel 1 (
   echo Node.js not found. Installing Node.js LTS with winget...
@@ -22,7 +22,8 @@ if errorlevel 1 ( echo npm install failed. & pause & exit /b 1 )
 node scripts\install.mjs
 echo.
 echo Done. Next:
-echo  1) Fully quit the Claude desktop app (tray icon ^> Quit), After Effects and Premiere Pro, then open them again.
+echo  1) Fully quit the Claude desktop app (tray icon ^> Quit) or ChatGPT desktop, After Effects, Premiere Pro and Illustrator, then open them again.
 echo  2) In After Effects: Edit ^> Preferences ^> Scripting ^& Expressions ^> "Allow Scripts to Write Files and Access Network".
-echo  3) In Claude, ask: "run kai_doctor" to confirm both apps are connected.
+echo  3) In Premiere: Window ^> UXP Plugins ^> KAI MCP Bridge (UXP) opens the modern bridge.
+echo  4) In Claude or ChatGPT, ask: "run kai_doctor" to confirm every app is connected.
 pause

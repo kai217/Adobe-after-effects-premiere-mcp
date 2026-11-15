@@ -29,7 +29,10 @@ for (var i = 0; i < clips.length; i++) {
   try {
     var it = KAI.item(c.item), a = snap(c['in']), b = snap(c.out), at = snap(c.at), v = (c.v === undefined ? 1 : c.v), au = (c.a === undefined ? v : c.a);
     if (b - a < 1 / fps) continue;
-    it.setInPoint(a, 4); it.setOutPoint(b, 4);
+    // In/out are set in the SOURCE frame grid and Premiere floors them to the frame below: snap to the source rate and nudge half a source frame
+    // (0-2s of 29.97 footage gives all 60 frames, not 59; 30 fps footage in a 29.97 sequence lands on its own frames)
+    var sf = fps; try { var fi = it.getFootageInterpretation(); if (fi && fi.frameRate > 1) sf = fi.frameRate; } catch (e) {}
+    it.setInPoint(Math.round(c['in'] * sf) / sf + 0.5 / sf, 4); it.setOutPoint(Math.round(c.out * sf) / sf + 0.5 / sf, 4);
     if (v > 0) {
       seq.videoTracks[v - 1].overwriteClip(it, at);
       var vc = clipAt(seq.videoTracks[v - 1], at);

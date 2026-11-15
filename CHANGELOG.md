@@ -9,7 +9,15 @@
 - `pr_markers`: adding a marker with `duration` threw "Illegal Parameter type" (marker.end takes seconds, not a Time).
 - `pr_build_cut`: `audio: false` now removes the linked audio instead of disabling it, so the sequence no longer runs a frame past the picture.
 
+- `pr_build_cut` / `pr_assemble`: clips came out one frame short (0-2 s of 29.97 footage gave 59 frames) and a 30 fps clip in a 29.97 sequence landed a frame early. Premiere floors in/out points to the source frame below, so they are now snapped to the clip's own frame rate and nudged half a source frame. `pr_build_cut` reports each clip's real length.
+- `il_to_ae`: live text never converted to shape layers (AE's Create Shapes skips text). The exported copy now has its text outlined (`outline_text`, default on; the original .ai keeps editable type), and `shapeLayersMade` only counts layers that really converted.
+- `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
+
+### Added
+- `install.bat` also registers the server with the **ChatGPT desktop app / Codex** (`~/.codex/config.toml`, 15 min tool timeout for renders) when either is installed.
+
 ### Notes from the demo builds (Nov 15 2026)
+- A new Premiere effect added through UXP can start with the values last used for that effect, not its defaults: always set the parameters you need.
 - Effect point parameters (e.g. Gradient Ramp start/end) on unparented shape layers take comp coordinates; drive them with `toComp(anchorPoint) + offset` so they follow the layer.
 - Inside a shape group, an expression on a sibling property must reach it through `content("Group").content(1)`; `thisProperty.propertyGroup()` chains fail there.
 - Fill effect Opacity is 0-1, not 0-100. Text tracking is limited to -1000..1000.

@@ -31,6 +31,31 @@ for (const dir of candidates) {
 }
 if (!n) { console.log('Claude desktop config folder not found. Add this to claude_desktop_config.json under "mcpServers":'); console.log(JSON.stringify({ 'kai-after-effects': entry }, null, 2)); }
 
+// ---------- ChatGPT desktop app / Codex ----------
+// ChatGPT desktop, the Codex CLI and the Codex IDE extension share ~/.codex/config.toml ([mcp_servers.<name>] tables).
+// Registered when Codex/ChatGPT is present (or with KAI_FORCE_CHATGPT=1). Long renders need a long tool timeout.
+try {
+  const codexDir = path.join(os.homedir(), '.codex');
+  let chatgpt = fs.existsSync(codexDir) || process.env.KAI_FORCE_CHATGPT === '1';
+  if (!chatgpt && process.platform === 'win32') {
+    const pk = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'Packages');
+    try { chatgpt = fs.readdirSync(pk).some(d => /^OpenAI\.ChatGPT/i.test(d)); } catch {}
+    if (!chatgpt) chatgpt = fs.existsSync(path.join(process.env.LOCALAPPDATA || '', 'Programs', 'ChatGPT'));
+  } else if (!chatgpt && process.platform === 'darwin') chatgpt = fs.existsSync('/Applications/ChatGPT.app');
+  if (chatgpt) {
+    fs.mkdirSync(codexDir, { recursive: true });
+    const f = path.join(codexDir, 'config.toml');
+    let raw = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+    if (raw) fs.writeFileSync(f + '.backup-' + Date.now(), raw);
+    // drop an earlier kai-after-effects table (up to the next [table] header), then append a fresh one
+    raw = raw.replace(/\n?\[mcp_servers\.kai-after-effects\][\s\S]*?(?=\n\[|$)/, '');
+    const lit = (p) => "'" + p + "'"; // TOML literal strings: backslashes in Windows paths stay as they are
+    const block = '\n[mcp_servers.kai-after-effects]\ncommand = ' + lit(entry.command) + '\nargs = [' + entry.args.map(lit).join(', ') + ']\nstartup_timeout_sec = 30\ntool_timeout_sec = 900\n';
+    fs.writeFileSync(f, raw.replace(/\s*$/, '\n') + block);
+    console.log('Registered in', f, '(ChatGPT desktop + Codex)');
+  }
+} catch (e) { console.log('! could not register with ChatGPT/Codex:', e.message); }
+
 // ---------- KAI MCP Bridge panel (After Effects + Premiere Pro) ----------
 // Links <this folder>/cep into Adobe's CEP extensions folder and allows unsigned extensions (PlayerDebugMode).
 import { execFileSync } from 'node:child_process';
