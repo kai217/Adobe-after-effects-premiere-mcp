@@ -22,5 +22,6 @@ for (var i = 0; i < segs.length; i++) {
   placed.push({ i: i, item: it.name, src: [a, b], at: snap(pos), len: snap(b - a) });
   pos = vc ? vc.end.seconds + (ARGS.gap || 0) : snap(pos + (b - a) + (ARGS.gap || 0)); // chain from the real clip end: avoids 1-frame gaps from rounding
 }
-if (ARGS.audio === false) for (var t3 = 0; t3 < seq.audioTracks.numTracks; t3++) for (var c = 0; c < seq.audioTracks[t3].clips.numItems; c++) seq.audioTracks[t3].clips[c].disabled = true;
+// audio:false removes the linked audio (disabling it left the clips on A1 and kept the sequence one frame longer than the picture)
+if (ARGS.audio === false) for (var t3 = 0; t3 < seq.audioTracks.numTracks; t3++) for (var c = seq.audioTracks[t3].clips.numItems - 1; c >= 0; c--) seq.audioTracks[t3].clips[c].remove(false, false);
 return { sequence: seq.name, fps: fps, duration: pos, clips: seq.videoTracks[0].clips.numItems, placed: placed.length, first: placed.slice(0, 3), last: placed.slice(-2) };

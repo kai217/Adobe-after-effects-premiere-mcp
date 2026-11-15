@@ -4,6 +4,10 @@
 
 ### Fixed
 - `ae_check`: no longer reports "blur clipped to its content bounds" on shape layers that already carry a transparent padding group (a rect/ellipse with no visible fill or stroke, e.g. the `Blur Bounds` group MK.halo adds). Before, the warning fired whenever the layer bounds were smaller than 1.2x the comp, even when the blur had room.
+- `il_add`: rects, ellipses and paths no longer get Illustrator's default 1 pt black stroke when no `stroke` is given; 2-point paths stay open (3+ points close unless `closed: false`); centre/right-justified point text is now centred on / right-aligned to `x` instead of starting at it.
+- `il_to_ae`: failed with "Object is invalid": the Illustrator document reference goes stale after `saveAs`, and AE layer objects go stale after each Create Shapes command. It now works on the active document after the save and re-finds AE layers by name.
+- `pr_markers`: adding a marker with `duration` threw "Illegal Parameter type" (marker.end takes seconds, not a Time).
+- `pr_build_cut`: `audio: false` now removes the linked audio instead of disabling it, so the sequence no longer runs a frame past the picture.
 
 ### Notes from the demo builds (Nov 15 2026)
 - Effect point parameters (e.g. Gradient Ramp start/end) on unparented shape layers take comp coordinates; drive them with `toComp(anchorPoint) + offset` so they follow the layer.
