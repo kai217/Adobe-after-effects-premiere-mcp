@@ -58,3 +58,7 @@ Setting `timeRemapEnabled = true` and then calling `setValueAtTime` on Time Rema
 - A new shape layer's anchor is [0,0] at the comp centre: path vertices written in comp pixels land off screen. Set the layer Position to [0,0] first (or write vertices relative to the centre).
 - Roughen Edges "Fractal Influence" is 0-1, not 0-100. Read an effect's parameter list once before scripting it (matchNames like `ADBE Roughen Edges-0004` don't tell you the range).
 - Undo from a script: `app.executeCommand(16)`. Don't look it up with `findMenuCommandId('Undo')`: in AE 2026 that returns a different command.
+- Source Text expressions: `value` is a string in the JavaScript engine (`value.text` is undefined). Slider values need `.value`.
+- `comp.exportAsMotionGraphicsTemplate(overwrite, path)` treats `path` as a folder and names the file after `motionGraphicsTemplateName`.
+- After `app.executeCommand(...)` the CompItem itself can go stale: keep its id and use `app.project.itemByID(id)`.
+- Layers have no `moveTo()`: use moveToBeginning/moveToEnd/moveBefore/moveAfter.

@@ -38,7 +38,7 @@ const calls = [
   ['ae_apply_preset', { comp: 'Main', layers: ['/Title.*/', 2], preset: 'C:/p.ffx', time_seconds: 1 }],
   ['pr_markers', { action: 'add', markers: [{ time: 3, name: 'Act 2', color: 1 }] }], ['pr_markers', { action: 'clear', from_time: 0, to_time: 10 }],
   ['pr_captions', { srt: 'C:/a.srt' }],
-  ['pr_save', { mode: 'version' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}]];
+  ['pr_save', { mode: 'version' }], ['pr_open', { path: 'C:/x.prproj' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}]];
 let bad = 0;
 for (const [n, a] of calls) {
   const r = await c.callTool({ name: n, arguments: a });

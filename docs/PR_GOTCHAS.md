@@ -109,3 +109,5 @@
 - Naming: exactly one "FINAL" sequence, in the sequences bin; older rounds prefixed "OLD vNN".
 - `projectItem.setInPoint/setOutPoint(seconds, 4)` floor to the source frame below and use the SOURCE frame rate: snap to the clip's own fps and add half a source frame, or every clip loses its last frame. `trackItem.inPoint` of 30 fps footage in a 29.97 sequence reports a converted value; trust `projectItem.getInPoint()`.
 - UXP effects added with `VideoFilterFactory.createComponent` may inherit the last-used values for that effect. Set every parameter you rely on.
+- After changing a clip's `end`/`start`, Premiere keeps reporting the old `inPoint`/`outPoint`; trust start/end and check frames.
+- `app.openDocument(path, true, true, true, true)` opens a project without conversion / locate-media / warning dialogs.

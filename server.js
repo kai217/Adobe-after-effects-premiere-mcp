@@ -167,7 +167,7 @@ tool('ae_set', 'Set a layer property (value, keyframes, or expression). Path use
   async (a) => text(await ae('ae_set', a, `
     var c = KAI.comp(ARGS.comp), l = KAI.layer(c, ARGS.layer), p = KAI.prop(l, ARGS.path), done = [];
     if (ARGS.clear_keys_between) { for (var i = p.numKeys; i >= 1; i--) { var t = p.keyTime(i); if (t >= ARGS.clear_keys_between[0] - 1e-4 && t <= ARGS.clear_keys_between[1] + 1e-4) p.removeKey(i); } done.push('cleared'); }
-    if (ARGS.value !== undefined && ARGS.value !== null) { if (p.numKeys > 0) p.setValueAtTime(c.time, ARGS.value); else p.setValue(ARGS.value); done.push('value'); }
+    if (ARGS.value !== undefined && ARGS.value !== null) { if (p.numKeys > 0) { p.setValueAtTime(c.time, ARGS.value); done.push('property is animated: set a keyframe at the comp time ' + Math.round(c.time * 1000) / 1000 + 's (use keyframes, or clear_keys_between to remove the animation)'); } else { p.setValue(ARGS.value); done.push('value'); } }
     if (ARGS.keyframes) { for (var k = 0; k < ARGS.keyframes.length; k++) { p.setValueAtTime(ARGS.keyframes[k][0], ARGS.keyframes[k][1]); }
       if (ARGS.ease) { for (var k2 = 0; k2 < ARGS.keyframes.length; k2++) { var idx = p.nearestKeyIndex(ARGS.keyframes[k2][0]); var dims = (p.value instanceof Array && p.propertyValueType != PropertyValueType.TwoD_SPATIAL && p.propertyValueType != PropertyValueType.ThreeD_SPATIAL) ? p.value.length : 1; var e = []; for (var d = 0; d < dims; d++) e.push(new KeyframeEase(0, 50)); try { p.setTemporalEaseAtKey(idx, e, e); } catch (x) {} } }
       done.push(ARGS.keyframes.length + ' keys'); }
@@ -188,7 +188,9 @@ tool('ae_layer', 'Edit a layer\'s timing and basics: rename, in/out/start (secon
     if (ARGS.name) l.name = ARGS.name;
     if (ARGS.enabled !== undefined) l.enabled = ARGS.enabled;
     if (ARGS.parent !== undefined) l.parent = ARGS.parent === null ? null : KAI.layer(c, ARGS.parent);
-    if (ARGS.move_to) l.moveTo(ARGS.move_to);
+    // AVLayer has no moveTo(): use moveToBeginning / moveToEnd / moveBefore / moveAfter
+    if (ARGS.move_to) { var to = Math.max(1, Math.min(c.numLayers, ARGS.move_to));
+      if (to == 1) l.moveToBeginning(); else if (to == c.numLayers) l.moveToEnd(); else if (to < l.index) l.moveBefore(c.layer(to)); else if (to > l.index) l.moveAfter(c.layer(to)); }
     if (ARGS.track_matte) { var T = { alpha: TrackMatteType.ALPHA, alpha_inverted: TrackMatteType.ALPHA_INVERTED, luma: TrackMatteType.LUMA, luma_inverted: TrackMatteType.LUMA_INVERTED, none: TrackMatteType.NO_TRACK_MATTE }[ARGS.track_matte.type];
       if (ARGS.track_matte.layer === null || ARGS.track_matte.type == 'none') { try { l.removeTrackMatte(); } catch (e) { l.trackMatteType = TrackMatteType.NO_TRACK_MATTE; } }
       else { var m = KAI.layer(c, ARGS.track_matte.layer); try { l.setTrackMatte(m, T); } catch (e) { l.moveAfter(m); l.trackMatteType = T; } } }
@@ -321,7 +323,7 @@ tool('ae_render', 'Render a comp (or a frame range of it) to a file through the 
     { timeoutSec: a.timeout_sec || 7200 })));
 
 // ---------- building ----------
-tool('ae_build_master', 'Build (or rebuild) a master comp from an edit list: each entry places a source comp/footage on the timeline (timeline frames in/out, source frame at the in-point), copying the transform the source had in a template comp, or fitting it to the frame. Adds audio files underneath and markers. Every source keeps its own comp (fully editable).',
+tool('ae_build_master', 'Build (or rebuild) a master comp from an edit list (where entries overlap, later entries are layered above earlier ones): each entry places a source comp/footage on the timeline (timeline frames in/out, source frame at the in-point), copying the transform the source had in a template comp, or fitting it to the frame. Adds audio files underneath and markers. Every source keeps its own comp (fully editable).',
   { name: z.string(), width: z.number(), height: z.number(), fps: z.number(), duration_frames: z.number(),
     entries: z.array(z.object({ source: z.string().describe('comp/footage name or file path'), in_frame: z.number(), out_frame: z.number().describe('inclusive'), source_frame: z.number().default(0),
       transform_from: z.string().optional().describe('comp whose layer of this source supplies anchor/position/scale'), fit: z.enum(['fill', 'fit', 'none']).optional(), label: z.string().optional(),
@@ -350,7 +352,8 @@ tool('ae_build_master', 'Build (or rebuild) a master comp from an edit list: eac
       L.startTime = (e.in_frame - (e.source_frame || 0)) / fps; L.inPoint = e.in_frame / fps; L.outPoint = (e.out_frame + 1) / fps; if (e.label) L.name = e.label;
       try { if (s instanceof CompItem) L.audioEnabled = false; } catch (er) {}
       placed.push(L); log.push((e.label || s.name) + ' ' + e.in_frame + '-' + e.out_frame + (X ? ' (xf from ' + e.transform_from + ')' : '')); }
-    for (var k = 0; k < placed.length; k++) placed[k].moveToEnd();
+    // later entries sit ABOVE earlier ones where they overlap (a title listed after its background stays visible)
+    for (var k = placed.length - 1; k >= 0; k--) placed[k].moveToEnd();
     if (A.audio) for (var au = 0; au < A.audio.length; au++) { var f2 = new File(A.audio[au].path); if (!f2.exists) throw new Error('audio not found ' + A.audio[au].path);
       var ai = app.project.importFile(new ImportOptions(f2)); ai.parentFolder = fold; var AL = M.layers.add(ai); AL.startTime = (A.audio[au].start_frame || 0) / fps; if (A.audio[au].name) AL.name = A.audio[au].name; AL.moveToEnd(); }
     if (A.markers) for (var m = 0; m < A.markers.length; m++) M.markerProperty.setValueAtTime(A.markers[m][0] / fps, new MarkerValue(A.markers[m][1]));

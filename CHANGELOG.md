@@ -14,9 +14,21 @@
 - `ae_undo` did nothing: `findMenuCommandId('Undo')` returns an unrelated command id in AE 2026. It now always runs Edit > Undo (command 16).
 - `il_preview` / `il_export` left the Illustrator document marked as changed (switching artboards and exporting dirty it), so a following `il_to_ae` refused to run. The saved state is now restored after exporting.
 - `ae_layer_props` / `ae_dump` (`only_changed`): X/Y/Z Position no longer show up as changed zeros when dimensions aren't separated.
+- `il_to_ae`: with many layers the After Effects comp object went stale between Create Shapes commands ("Object is invalid"); it is now fetched again by id after every command.
+- `ae_export_mogrt`: After Effects treats the output path as a folder and names the file after the template, so a folder called `X.mogrt` was created. The template is now exported to a temp folder and moved to the exact path.
+- `ae_layer` `move_to` always failed (layers have no `moveTo`): now uses moveToBeginning / moveBefore / moveAfter / moveToEnd.
+- `ae_build_master`: overlapping entries were stacked with the first entry on top, hiding titles listed after their background. Later entries now sit above earlier ones.
+- `ae_set` with `value` on an animated property now says it set a keyframe at the comp time instead of reporting a plain "value".
+- `pr_place`: audio-only files (wav, mp3...) go to an audio track (`audio_track`), and the result reports where the clip landed.
+- `pr_captions`: words split by the transcriber ("1" + ".28") are joined again ("1.28").
+- `pr_clip`: result now re-reads the clip and notes that Premiere keeps reporting old in/out after start/end edits.
+- `pr_save` refuses with a clear message when no project is open (it used to report a save that never happened).
+- `media_probe` reports missing files instead of returning empty fields.
+- `pr_clip_params`: colors come back as [r, g, b, a].
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added
+- `pr_open`: open a .prproj (there was no way to open a Premiere project before; dialogs suppressed).
 - `install.bat` also registers the server with the **ChatGPT desktop app / Codex** (`~/.codex/config.toml`, 15 min tool timeout for renders) when either is installed.
 
 ### Notes from the demo builds (Nov 15 2026)

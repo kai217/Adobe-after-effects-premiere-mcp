@@ -10,6 +10,8 @@ The After Effects pieces are original motion graphics with editable projects (ea
 Videos: see the [Demo release](../../releases/tag/demo) (each AE piece has a final render and a breakdown: wireframe, final and timeline).
 
 ## Install (Windows)
+Tested on Windows 11 with After Effects, Premiere Pro and Illustrator 2026. The macOS code paths exist but are untested.
+
 1. Install After Effects, Premiere Pro and/or Illustrator (2025 or newer), and the Claude desktop app or the ChatGPT desktop app.
 2. Download this repo (Code > Download ZIP), unzip it, and double-click `install.bat`. It installs Node.js if needed.
 3. Fully quit and reopen Claude/ChatGPT and the Adobe apps.
@@ -45,7 +47,7 @@ ae_preview, ae_compare, ae_import, ae_replace_footage, ae_save (versions), ae_op
 ae_library, ae_effects, ae_export_mogrt.
 
 Premiere Pro: pr_status, pr_guide, pr_run_script, pr_project, pr_sequence, pr_import, pr_import_ae_comps (Dynamic Link),
-pr_new_sequence (clone or from clips), pr_place, pr_clip, pr_preview (still frames, no render), pr_save (versions), pr_export,
+pr_open, pr_new_sequence (clone or from clips), pr_place (audio-only files go to an audio track), pr_clip, pr_preview (still frames, no render), pr_save (versions), pr_export,
 pr_build_cut (sequence from in/out ranges), pr_assemble (multi-track timed edit list: interviews, B-roll, nat sound, graphics), pr_grade (LUT + look on every clip of any video track).
 
 Illustrator: il_status, il_guide, il_run_script, il_document, il_new_document, il_open, il_save (versions), il_add (rect/ellipse/line/path/
