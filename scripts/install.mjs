@@ -51,7 +51,7 @@ try {
     raw = raw.replace(/\n?\[mcp_servers\.kai-after-effects\][\s\S]*?(?=\n\[|$)/, '');
     const lit = (p) => "'" + p + "'"; // TOML literal strings: backslashes in Windows paths stay as they are
     const block = '\n[mcp_servers.kai-after-effects]\ncommand = ' + lit(entry.command) + '\nargs = [' + entry.args.map(lit).join(', ') + ']\nstartup_timeout_sec = 30\ntool_timeout_sec = 900\n';
-    fs.writeFileSync(f, raw.replace(/\s*$/, '\n') + block);
+    fs.writeFileSync(f, raw.trim() ? raw.replace(/\s*$/, '\n') + block : block.replace(/^\n/, ''));
     console.log('Registered in', f, '(ChatGPT desktop + Codex)');
   }
 } catch (e) { console.log('! could not register with ChatGPT/Codex:', e.message); }
