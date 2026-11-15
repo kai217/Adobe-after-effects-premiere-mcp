@@ -57,3 +57,4 @@ Setting `timeRemapEnabled = true` and then calling `setValueAtTime` on Time Rema
 - Per-character reveal that works: animator with Opacity 0 (+ Blur), selector shape **Square** with Advanced > Smoothness 100, animate **Start** 0 -> 100 (reveal left to right). For an exit animate **End** 0 -> 100 on a second animator. Ramp Up/Down shapes with Offset +-100 leave the text fully visible at both ends, so they don't work as a reveal.
 - A new shape layer's anchor is [0,0] at the comp centre: path vertices written in comp pixels land off screen. Set the layer Position to [0,0] first (or write vertices relative to the centre).
 - Roughen Edges "Fractal Influence" is 0-1, not 0-100. Read an effect's parameter list once before scripting it (matchNames like `ADBE Roughen Edges-0004` don't tell you the range).
+- Undo from a script: `app.executeCommand(16)`. Don't look it up with `findMenuCommandId('Undo')`: in AE 2026 that returns a different command.

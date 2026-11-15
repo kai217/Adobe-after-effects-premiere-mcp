@@ -114,14 +114,15 @@ var KAI = KAI || {};
       throw new Error('font not installed: ' + n); } };
   // Export one artboard as PNG at a scale (100 = 72 ppi). Returns the file path Illustrator actually wrote.
   K.exportPNG = function (d, file, artboard, scale, transparent) {
-    d.artboards.setActiveArtboardIndex(artboard || 0);
+    // exporting (and switching the active artboard) marks the document as changed: restore the saved flag so a preview never leaves it "unsaved"
+    var ws = d.saved; d.artboards.setActiveArtboardIndex(artboard || 0);
     var o = new ExportOptionsPNG24(); o.artBoardClipping = true; o.horizontalScale = scale || 100; o.verticalScale = scale || 100; o.transparency = !!transparent; o.antiAliasing = true;
-    var f = new File(file); d.exportFile(f, ExportType.PNG24, o); return f.fsName;
+    var f = new File(file); d.exportFile(f, ExportType.PNG24, o); if (ws) try { d.saved = true; } catch (e) {} return f.fsName;
   };
   K.exportSVG = function (d, file, artboard) {
     var o = new ExportOptionsSVG(); o.embedRasterImages = true; o.fontType = SVGFontType.OUTLINEFONT; o.cssProperties = SVGCSSPropertyLocation.STYLEATTRIBUTES;
     try { o.saveMultipleArtboards = true; o.artboardRange = String((artboard || 0) + 1); } catch (e) {}
-    var f = new File(file); d.exportFile(f, ExportType.SVG, o); return f.fsName;
+    var ws = d.saved, f = new File(file); d.exportFile(f, ExportType.SVG, o); if (ws) try { d.saved = true; } catch (e) {} return f.fsName;
   };
   K.unit = { pt: 1, px: 1, 'in': 72, mm: 2.834645669, cm: 28.34645669 };
 }(KAI));

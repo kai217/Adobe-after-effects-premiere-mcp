@@ -11,6 +11,9 @@
 
 - `pr_build_cut` / `pr_assemble`: clips came out one frame short (0-2 s of 29.97 footage gave 59 frames) and a 30 fps clip in a 29.97 sequence landed a frame early. Premiere floors in/out points to the source frame below, so they are now snapped to the clip's own frame rate and nudged half a source frame. `pr_build_cut` reports each clip's real length.
 - `il_to_ae`: live text never converted to shape layers (AE's Create Shapes skips text). The exported copy now has its text outlined (`outline_text`, default on; the original .ai keeps editable type), and `shapeLayersMade` only counts layers that really converted.
+- `ae_undo` did nothing: `findMenuCommandId('Undo')` returns an unrelated command id in AE 2026. It now always runs Edit > Undo (command 16).
+- `il_preview` / `il_export` left the Illustrator document marked as changed (switching artboards and exporting dirty it), so a following `il_to_ae` refused to run. The saved state is now restored after exporting.
+- `ae_layer_props` / `ae_dump` (`only_changed`): X/Y/Z Position no longer show up as changed zeros when dimensions aren't separated.
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added

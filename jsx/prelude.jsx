@@ -105,6 +105,8 @@ var KAI = KAI || {};
       var pp = (path ? path + '/' : '') + p.matchName + (dup ? '[' + i + ']' : '');
       if (p.propertyType == PropertyType.PROPERTY) {
         if (p.propertyValueType == PropertyValueType.NO_VALUE) continue;
+        // X/Y/Z Position only mean something when dimensions are separated; otherwise they show up as changed zeros
+        try { if (p.isSeparationFollower && !p.separationLeader.dimensionsSeparated) continue; } catch (e) {}
         var animated = p.numKeys > 0, expr = false; try { expr = p.expressionEnabled; } catch (e) {}
         if (opts.onlyChanged && !animated && !expr) { var changed = false; try { changed = p.isModified; } catch (e) { changed = true; } if (!changed) continue; }
         if (opts.filter && !new RegExp(opts.filter, 'i').test(pp + ' ' + p.name)) continue;

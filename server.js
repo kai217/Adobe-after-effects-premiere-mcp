@@ -290,7 +290,8 @@ tool('ae_open', 'Open a project file in After Effects (closes the current one; r
 
 tool('ae_undo', 'Undo the last N actions in After Effects (each AI edit is one named Undo step).', { steps: z.number().optional() },
   async (a) => text(await ae('ae_undo', a, `
-    var id = app.findMenuCommandId('Undo'); if (!id) id = 16; var n = ARGS.steps || 1;
+    // Edit > Undo is command 16. findMenuCommandId('Undo') returns an unrelated id (2371 in AE 2026), so never look it up.
+    var id = 16, n = ARGS.steps || 1;
     for (var i = 0; i < n; i++) app.executeCommand(id); return { undone: n };`)));
 
 // ---------- rendering ----------
