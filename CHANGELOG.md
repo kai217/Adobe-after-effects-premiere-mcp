@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Fixed
+- `ae_check`: no longer reports "blur clipped to its content bounds" on shape layers that already carry a transparent padding group (a rect/ellipse with no visible fill or stroke, e.g. the `Blur Bounds` group MK.halo adds). Before, the warning fired whenever the layer bounds were smaller than 1.2x the comp, even when the blur had room.
+
+### Notes from the demo builds (Nov 15 2026)
+- Effect point parameters (e.g. Gradient Ramp start/end) on unparented shape layers take comp coordinates; drive them with `toComp(anchorPoint) + offset` so they follow the layer.
+- Inside a shape group, an expression on a sibling property must reach it through `content("Group").content(1)`; `thisProperty.propertyGroup()` chains fail there.
+- Fill effect Opacity is 0-1, not 0-100. Text tracking is limited to -1000..1000.
+- Render ProRes from AE and encode H.264 with ffmpeg (CRF 15) instead of AE's 5 Mbps H.264 template for demo-quality output.
+
+
+
 ## 2.0.0 — Illustrator + UXP
 
 ### Added

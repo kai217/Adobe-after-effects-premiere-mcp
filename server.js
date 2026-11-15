@@ -92,7 +92,8 @@ tool('ae_check', 'Check a comp (and every comp nested in it) for problems: expre
           if (mn == 'ADBE Glo2') add('warn', c, L, 'Glow effect: shifts saturated colors toward white/cyan; consider MK.halo');
           if (L.matchName == 'ADBE Vector Layer' && /Gaussian Blur|Box Blur|Fast Blur|Glo2|Camera Lens Blur/.test(mn + ' ' + fx.property(f).name)) {
             var r = null; try { r = L.sourceRectAtTime(L.inPoint, false); } catch (e) {}
-            if (r && (r.width < c.width * 1.2 || r.height < c.height * 1.2)) add('warn', c, L, 'blur on a shape layer is clipped to its content bounds (' + Math.round(r.width) + 'x' + Math.round(r.height) + '), which shows as a hard square edge; add a large transparent rect (MK.halo does this)'); } }
+            var pad = false; try { var rv = L.property('ADBE Root Vectors Group'); for (var g = 1; g <= rv.numProperties && !pad; g++) { var G = rv.property(g); if (G.matchName != 'ADBE Vector Group') continue; var cv = G.property('ADBE Vectors Group'); var shp = false, vis = false; for (var q = 1; q <= cv.numProperties; q++) { var Q = cv.property(q); if (/Shape - (Rect|Ellipse|Group)/.test(Q.matchName)) shp = true; if (Q.matchName == 'ADBE Vector Graphic - Fill' && Q.enabled && Q.property('ADBE Vector Fill Opacity').value > 0) vis = true; if (Q.matchName == 'ADBE Vector Graphic - Stroke' && Q.enabled && Q.property('ADBE Vector Stroke Opacity').value > 0) vis = true; } if (shp && !vis) pad = true; } } catch (e) {}
+            if (!pad && r && (r.width < c.width * 1.2 || r.height < c.height * 1.2)) add('warn', c, L, 'blur on a shape layer is clipped to its content bounds (' + Math.round(r.width) + 'x' + Math.round(r.height) + '), which shows as a hard square edge; add a large transparent rect (MK.halo does this)'); } }
         visitProps(L, c, L);
         if (ARGS.nested !== false && L.source && L.source instanceof CompItem) checkComp(L.source); } }
     checkComp(root);
