@@ -1,0 +1,26 @@
+{
+  "id": "com.kai.mcp.uxpbridge",
+  "name": "KAI MCP Bridge (UXP)",
+  "version": "2.0.0",
+  "main": "index.html",
+  "manifestVersion": 5,
+  "host": { "app": "premierepro", "minVersion": "25.6.0" },
+  "requiredPermissions": {
+    "localFileSystem": "fullAccess",
+    "allowCodeGenerationFromStrings": true,
+    "clipboard": "readAndWrite"
+  },
+  "entrypoints": [
+    {
+      "id": "kaiBridge",
+      "type": "panel",
+      "label": { "default": "KAI MCP Bridge (UXP)" },
+      "minimumSize": { "width": 230, "height": 120 },
+      "maximumSize": { "width": 2000, "height": 2000 },
+      "preferredDockedSize": { "width": 300, "height": 170 },
+      "preferredFloatingSize": { "width": 320, "height": 190 },
+      "icons": [ { "width": 23, "height": 23, "path": "icons/icon.png", "scale": [1, 2], "theme": ["all"] } ]
+    }
+  ],
+  "icons": [ { "width": 48, "height": 48, "path": "icons/icon.png", "scale": [1, 2], "theme": ["all"], "species": ["pluginList"] } ]
+}

@@ -1,0 +1,7 @@
+node_modules/
+config.json
+assets/
+library/
+C:*
+*.log
+.last_start.json

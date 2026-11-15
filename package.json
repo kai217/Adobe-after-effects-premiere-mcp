@@ -1,0 +1,37 @@
+{
+  "name": "adobe-after-effects-premiere-mcp",
+  "version": "2.0.0",
+  "description": "Adobe video MCP: After Effects + Premiere Pro (plus Illustrator) in one server. ExtendScript through a CEP bridge (plus direct AE/Illustrator routes) and modern UXP for Premiere; editing workflow tools (transcripts, cuts, grading, shot matching, captions, stability, archive comps).",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "kai-ae-mcp": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node scripts/selftest.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "zod": "^3.23.8",
+    "ffmpeg-static": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "adobe",
+    "after-effects",
+    "premiere-pro",
+    "illustrator",
+    "claude",
+    "video-editing",
+    "motion-graphics",
+    "extendscript",
+    "uxp",
+    "cep"
+  ]
+}

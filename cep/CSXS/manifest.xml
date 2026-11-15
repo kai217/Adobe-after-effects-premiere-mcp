@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- KAI MCP Bridge: one CEP extension for After Effects (AEFT), Premiere Pro (PPRO) and Illustrator (ILST).
+     "panel" = Window > Extensions > KAI MCP Bridge (status). "headless" starts with the app so jobs run without opening anything. -->
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.kai.mcp.bridge" ExtensionBundleVersion="1.0.0" ExtensionBundleName="KAI MCP Bridge"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ExtensionList>
+    <Extension Id="com.kai.mcp.bridge.panel" Version="1.0.0"/>
+    <Extension Id="com.kai.mcp.bridge.headless" Version="1.0.0"/>
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="AEFT" Version="[15.0,99.9]"/>
+      <Host Name="PPRO" Version="[14.0,99.9]"/>
+      <Host Name="ILST" Version="[24.0,99.9]"/>
+    </HostList>
+    <LocaleList><Locale Code="All"/></LocaleList>
+    <RequiredRuntimeList><RequiredRuntime Name="CSXS" Version="9.0"/></RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.kai.mcp.bridge.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <CEFCommandLine><Parameter>--enable-nodejs</Parameter><Parameter>--mixed-context</Parameter></CEFCommandLine>
+        </Resources>
+        <Lifecycle><AutoVisible>true</AutoVisible></Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>KAI MCP Bridge</Menu>
+          <Geometry><Size><Height>170</Height><Width>320</Width></Size><MinSize><Height>120</Height><Width>240</Width></MinSize></Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+    <Extension Id="com.kai.mcp.bridge.headless">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <CEFCommandLine><Parameter>--enable-nodejs</Parameter><Parameter>--mixed-context</Parameter></CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>false</AutoVisible>
+          <StartOn>
+            <Event>com.adobe.csxs.events.ApplicationActivate</Event>
+            <Event>applicationActivate</Event>
+          </StartOn>
+        </Lifecycle>
+        <UI><Type>Custom</Type><Geometry><Size><Height>1</Height><Width>1</Width></Size></Geometry></UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>
