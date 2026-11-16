@@ -1,7 +1,8 @@
 # adobe-after-effects-premiere-mcp
 **Adobe After Effects + Premiere Pro MCP server for Claude and ChatGPT** (plus Illustrator). Control After Effects and Premiere Pro with AI: build edits, comps, captions, color and motion graphics from plain-English requests.
 
-Lets Claude work inside your running **After Effects, Premiere Pro and Illustrator** in the background (no screen takeover).
+Lets Claude or ChatGPT work inside your running **After Effects, Premiere Pro and Illustrator** in the background (no screen takeover).
+Setup is one double-click. After that it's seamless: ask in plain English ("build a lower third", "cut these selects", "grade V1 warmer") and it happens in the apps you already have open, with every edit as an editable comp, layer or clip you can undo.
 One server, three apps, two bridges: ExtendScript through the CEP bridge (every app) and modern **UXP** for Premiere Pro.
 
 ## Demo
