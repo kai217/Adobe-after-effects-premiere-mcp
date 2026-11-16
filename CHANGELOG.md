@@ -28,6 +28,8 @@
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added
+- **Chat inside the apps**: the KAI MCP Bridge panel now has Chat and Activity tabs. Chat runs Claude Code headless (`claude -p`, stream-json) with only this MCP's tools, resumes the same session for follow-ups, streams replies and shows the current step live; Stop and New buttons. Uses the user's Claude Code sign-in; clear messages when Claude Code is missing or not signed in. Files in `<workDir>/chat`.
+- **Live activity feed in the KAI MCP Bridge panel** (After Effects, Premiere Pro, Illustrator), modeled on Adobe's in-app AI Assistant: every tool call shows up as a plain-language step with a running / done / error marker, the app, and how long it took. New tools: `kai_say` (short narration between steps), `kai_plan` (plan checklist with done / current step) and `kai_ask` (Proceed / Deny buttons in the panel; the tool waits for the click). Files live in `<workDir>/activity`. Panel is taller by default (340x520) and uses flat SVG icons.
 - `pr_open`: open a .prproj (there was no way to open a Premiere project before; dialogs suppressed).
 - `install.bat` also registers the server with the **ChatGPT desktop app / Codex** (`~/.codex/config.toml`, 15 min tool timeout for renders) when either is installed.
 

@@ -38,7 +38,9 @@ const calls = [
   ['ae_apply_preset', { comp: 'Main', layers: ['/Title.*/', 2], preset: 'C:/p.ffx', time_seconds: 1 }],
   ['pr_markers', { action: 'add', markers: [{ time: 3, name: 'Act 2', color: 1 }] }], ['pr_markers', { action: 'clear', from_time: 0, to_time: 10 }],
   ['pr_captions', { srt: 'C:/a.srt' }],
-  ['pr_save', { mode: 'version' }], ['pr_open', { path: 'C:/x.prproj' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}]];
+  ['pr_save', { mode: 'version' }], ['pr_open', { path: 'C:/x.prproj' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}],
+  ['kai_plan', { title: 'R4 notes', steps: ['Space the panels', 'Bigger hex cluster', 'Finale copy'] }], ['kai_plan', { done: [0], current: 1 }],
+  ['kai_say', { text: 'Panels spaced. Next: hex cluster.' }], ['kai_ask', { question: 'Overwrite the R3 project?', timeout_sec: 1 }]];
 let bad = 0;
 for (const [n, a] of calls) {
   const r = await c.callTool({ name: n, arguments: a });
@@ -46,6 +48,16 @@ for (const [n, a] of calls) {
   const ok = !r.isError && !/ERROR/.test(txt);
   if (!ok && !['ae_status', 'pr_status', 'pr_preview', 'il_status'].includes(n)) bad++;
   console.log(ok ? 'OK  ' : 'FAIL', n, ok ? '' : txt.slice(0, 300));
+}
+// The activity feed must have one line per tool call (start + finish) plus the narration.
+{ const fs = await import('node:fs'), os = await import('node:os');
+  const feed = path.join(os.tmpdir(), 'kai-mcp-selftest', 'activity', 'feed.jsonl');
+  const ev = fs.existsSync(feed) ? fs.readFileSync(feed, 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [];
+  const says = ev.filter(e => e.kind === 'say').length, tools = ev.filter(e => e.kind === 'tool' && e.status !== 'running').length;
+  const plan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'kai-mcp-selftest', 'activity', 'plan.json'), 'utf8'));
+  const ok = says >= 1 && tools >= calls.length - 4 && plan.done.length === 1 && plan.current === 1;
+  if (!ok) bad++;
+  console.log(ok ? 'OK  ' : 'FAIL', 'activity feed', { events: ev.length, says, tools, plan: plan.done });
 }
 await c.close();
 console.log(bad ? `${bad} failures` : 'all ExtendScript bodies parse');

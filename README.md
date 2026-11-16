@@ -27,6 +27,26 @@ folder and sets PlayerDebugMode so the unsigned panel can load), and packs and i
 Creative Cloud's plugin installer. The bridge starts by itself when an app opens; Window > Extensions (Legacy) > KAI MCP Bridge shows its status.
 Other MCP clients (Cursor, VS Code, Claude Code...): point them at `node <install folder>\server.js` over stdio.
 
+## See what Claude is doing (inside the apps)
+Open Window > Extensions (Legacy) > KAI MCP Bridge in After Effects, Premiere or Illustrator. Besides the connection status it shows,
+live: a plan checklist for the current job, every step Claude takes in plain language (running, done or failed, which app, how long),
+short notes between steps, and Proceed / Deny buttons when Claude asks before a risky change (`kai_plan`, `kai_say`, `kai_ask`).
+It works across all three apps at once, the same feed in every panel.
+
+## Chat inside the apps
+The KAI MCP Bridge panel has a **Chat** tab: type a request in After Effects, Premiere or Illustrator and Claude does it right there,
+with the plan and every step showing in the **Activity** tab. It runs Claude Code in the background on your computer with only this
+MCP's tools (no shell, no file editing) and uses your own Claude sign-in (Pro/Max), so there is no API key to set up.
+
+One-time setup:
+1. Install Claude Code: open PowerShell and run the install command from https://code.claude.com/docs/en/setup
+   (or `npm install -g @anthropic-ai/claude-code` with Node 22+).
+2. Run `claude` once in a terminal and sign in with your Claude account.
+3. Restart the Adobe apps. Open Window > Extensions (Legacy) > KAI MCP Bridge > Chat.
+
+Optional in `config.json`: `claudePath` (if Claude Code is somewhere unusual), `chatModel` (e.g. `"opus"`), `nodePath`.
+**New** starts a fresh conversation; **Stop** ends the current run. History is in `<workDir>/chat`.
+
 ## How it talks to the apps
 Two bridges, same file-queue design (any number of Claude sessions can share them; no ports):
 - **CEP bridge** (`cep/`, ExtendScript): After Effects, Premiere Pro, Illustrator. Full access to everything the classic scripting DOMs can do.

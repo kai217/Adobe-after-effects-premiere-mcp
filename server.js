@@ -11,6 +11,7 @@ import { loadConfig, runJob, findAfterFX, isAERunning, isPRRunning, readHeartbea
 import { execFile } from 'node:child_process';
 import os from 'node:os';
 import { thumbJpeg, contactSheet, extractFrame, imageDiff, sideBySide, waitForPngs } from './lib/media.js';
+import { emit, toolEvent, registerActivity } from './lib/activity.js';
 
 const cfg = loadConfig();
 const server = new McpServer({ name: 'kai-ae-mcp', version: '1.0.0' });
@@ -39,9 +40,21 @@ async function ae(tool, args, code, { undo, timeoutSec, expectedProject, host = 
     throw e;
   }
 }
+// Every tool call shows up live in the KAI MCP Bridge panel (lib/activity.js): what is happening, in plain language.
 function tool(name, description, shape, handler) {
   server.tool(name, description, shape, async (args) => {
-    try { return await handler(args || {}); } catch (e) { return fail(String(e.message || e)); }
+    const quiet = name.startsWith('kai_') && name !== 'kai_doctor';
+    const ev = quiet ? null : toolEvent(name, args || {}), t0 = Date.now(), id = `${t0.toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    if (ev) emit(cfg, { ...ev, id, status: 'running' });
+    try {
+      const r = await handler(args || {});
+      const err = r && r.isError;
+      if (ev) emit(cfg, { ...ev, id, status: err ? 'error' : 'done', ms: Date.now() - t0, error: err ? String(r.content?.[0]?.text || '').replace(/^ERROR: /, '').slice(0, 200) : undefined });
+      return r;
+    } catch (e) {
+      if (ev) emit(cfg, { ...ev, id, status: 'error', ms: Date.now() - t0, error: String(e.message || e).slice(0, 200) });
+      return fail(String(e.message || e));
+    }
   });
 }
 
@@ -393,6 +406,7 @@ const { registerIllustrator } = await import('./lib/illustrator_tools.js');
 registerIllustrator({ tool, text, fail, ae, cfg, z });
 const { registerEditTools } = await import('./lib/edit_tools.js');
 registerEditTools({ tool, text, fail, ae, cfg, z });
+registerActivity({ tool, text, cfg, z });
 
 // Startup marker in the server folder: shows which code version is actually running (helps when an app restart is missed).
 try { fs.writeFileSync(path.join(ROOT, '.last_start.json'), JSON.stringify({ at: new Date().toISOString(), pid: process.pid, version: JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version, premiere: true }, null, 1)); } catch {}

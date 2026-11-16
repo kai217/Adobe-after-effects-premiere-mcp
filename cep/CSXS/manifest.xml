@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- KAI MCP Bridge: one CEP extension for After Effects (AEFT), Premiere Pro (PPRO) and Illustrator (ILST).
-     "panel" = Window > Extensions > KAI MCP Bridge (status). "headless" starts with the app so jobs run without opening anything. -->
+     "panel" = Window > Extensions > KAI MCP Bridge (status, live activity feed, plan, Proceed / Deny questions). "headless" starts with the app so jobs run without opening anything. -->
 <ExtensionManifest Version="7.0" ExtensionBundleId="com.kai.mcp.bridge" ExtensionBundleVersion="1.0.0" ExtensionBundleName="KAI MCP Bridge"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
@@ -27,7 +27,7 @@
         <UI>
           <Type>Panel</Type>
           <Menu>KAI MCP Bridge</Menu>
-          <Geometry><Size><Height>170</Height><Width>320</Width></Size><MinSize><Height>120</Height><Width>240</Width></MinSize></Geometry>
+          <Geometry><Size><Height>520</Height><Width>340</Width></Size><MinSize><Height>160</Height><Width>240</Width></MinSize></Geometry>
         </UI>
       </DispatchInfo>
     </Extension>
