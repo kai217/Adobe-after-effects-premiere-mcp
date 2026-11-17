@@ -72,7 +72,7 @@ try {
   }
   console.log('Bridge panel :', link, '->', cepSrc);
 } catch (e) { console.log('! could not install the bridge panel:', e.message); }
-for (const v of [9, 10, 11, 12]) {
+for (const v of [9, 10, 11, 12, 13, 14]) {
   try {
     if (process.platform === 'win32') execFileSync('reg', ['add', `HKCU\\Software\\Adobe\\CSXS.${v}`, '/v', 'PlayerDebugMode', '/t', 'REG_SZ', '/d', '1', '/f'], { stdio: 'ignore' });
     else if (process.platform === 'darwin') execFileSync('defaults', ['write', `com.adobe.CSXS.${v}`, 'PlayerDebugMode', '1'], { stdio: 'ignore' });
