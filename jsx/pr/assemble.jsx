@@ -53,6 +53,13 @@ for (var i = 0; i < clips.length; i++) {
     placed++; end = Math.max(end, at + (b - a));
   } catch (e) { errs.push(i + ': ' + e); try { it.clearInPoint(4); it.clearOutPoint(4); } catch (e2) {} }
 }
+// Close 1-frame gaps: in/out snap to the SOURCE frame grid and 'at' snaps to the SEQUENCE grid, so a range like 56.4-63.2 can come out
+// one frame short of the next clip's start and leave a black frame (found on the Science Labs loops, Nov 17 2026). Extend the earlier clip.
+var closed = [];
+for (var vt = 0; vt < seq.videoTracks.numTracks; vt++) { var T = seq.videoTracks[vt];
+  for (var g = 0; g < T.clips.numItems - 1; g++) { var c0 = T.clips[g], c1 = T.clips[g + 1];
+    var gap = (Number(c1.start.ticks) - Number(c0.end.ticks)) / 254016000000;
+    if (gap > 0.0001 && gap <= 1.5 / fps) { var tt = new Time(); tt.ticks = c1.start.ticks; try { c0.end = tt; closed.push('V' + (vt + 1) + ' #' + g); } catch (e) {} } } }
 var xf = 0;
 if (A.xfade) {
   var tr = qe.project.getAudioTransitionByName('Constant Power'), fr = A.xfade.frames || 4, tcs = '00;00;00;' + (fr < 10 ? '0' : '') + fr;
@@ -65,4 +72,4 @@ if (A.xfade) {
     }
   }
 }
-return { sequence: seq.name, fps: fps, placed: placed, errors: errs, duration: end, video_tracks: seq.videoTracks.numTracks, audio_tracks: seq.audioTracks.numTracks, crossfades: xf };
+return { sequence: seq.name, fps: fps, placed: placed, errors: errs, duration: end, video_tracks: seq.videoTracks.numTracks, audio_tracks: seq.audioTracks.numTracks, crossfades: xf, closed_gaps: closed };
