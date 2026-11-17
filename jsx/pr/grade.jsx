@@ -25,4 +25,8 @@ for (var ci = 0; ci < tr.clips.numItems; ci++) {
   } catch (e) { errs.push(ci + ': ' + e); }
 }
 try { if (prev && prev.sequenceID != s.sequenceID) app.project.activeSequence = prev; } catch (e) {}
-return { sequence: s.name, graded: done, errors: errs };
+// PR27_LUT_WARNING (Nov 17 2026, tested in Premiere 26.5.3 and 27.0): writing Lumetri 'LUTAsset' + 'Input LUT' from ExtendScript
+// stores the path in the project but Lumetri never loads the LUT (render, export and re-open all stay log). UXP rejects the write
+// ('Illegal Parameter type'). So report it: the caller must bake the LUT (scripts/bake_lut.py) or pick it in the Lumetri panel.
+var warnings = []; if (ARGS.lut) warnings.push('Premiere ' + app.version + ': the Lumetri conversion LUT path was written but Lumetri does NOT load LUTs set by script, so the clips still render as log. Bake the LUT with ffmpeg (scripts/bake_lut.py) or choose it in Lumetri > Basic Correction > Input LUT by hand.');
+return { sequence: s.name, graded: done, errors: errs, warnings: warnings };
