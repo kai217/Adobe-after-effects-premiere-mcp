@@ -67,8 +67,17 @@ var KAI = KAI || {};
     return c.typename == 'NoColor' ? null : c.typename; } catch (e) { return null; } };
   // Geometry: Illustrator's Y axis points UP and the origin is the artboard ruler origin. geometricBounds = [left, top, right, bottom].
   K.bounds = function (it) { try { var b = it.geometricBounds; return { left: b[0], top: b[1], right: b[2], bottom: b[3], width: b[2] - b[0], height: b[1] - b[3] }; } catch (e) { return null; } };
+  // K.clipBounds(item): the bounds you actually see. geometricBounds of a clipped group covers ALL the hidden artwork inside it, so use this to size, align or fit clipped groups (and groups that contain them).
+  K.clipBounds = function (it) {
+    function vb(x) { var i, b, u = null;
+      if (x.typename != 'GroupItem') return x.geometricBounds;
+      if (x.clipped) for (i = 0; i < x.pageItems.length; i++) { var p = x.pageItems[i]; if (p.clipping) return p.geometricBounds; }
+      for (i = 0; i < x.pageItems.length; i++) { b = vb(x.pageItems[i]); if (!u) u = [b[0], b[1], b[2], b[3]]; else { u[0] = Math.min(u[0], b[0]); u[1] = Math.max(u[1], b[1]); u[2] = Math.max(u[2], b[2]); u[3] = Math.min(u[3], b[3]); } }
+      return u || x.geometricBounds; }
+    try { var r = vb(it); return { left: r[0], top: r[1], right: r[2], bottom: r[3], width: r[2] - r[0], height: r[1] - r[3] }; } catch (e) { return null; } };
   K.itemInfo = function (it) {
     var o = { type: it.typename, name: it.name || '', layer: null, bounds: K.bounds(it) };
+    try { if (it.typename == 'GroupItem' && it.clipped) o.clipBounds = K.clipBounds(it); } catch (e) {}
     try { o.layer = it.layer.name; } catch (e) {}
     try { o.hidden = it.hidden; o.locked = it.locked; o.opacity = it.opacity; } catch (e) {}
     if (it.typename == 'PathItem') { try { o.filled = it.filled; o.fill = it.filled ? K.colorOut(it.fillColor) : null; o.stroked = it.stroked; o.stroke = it.stroked ? K.colorOut(it.strokeColor) : null; o.strokeWidth = it.strokeWidth; o.closed = it.closed; o.points = it.pathPoints.length; } catch (e) {} }

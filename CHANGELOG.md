@@ -3,6 +3,10 @@
 ## Unreleased
 
 ### Fixed
+- `il_to_ae`: sending a second document to After Effects left that document in front in Illustrator, so the next `il_export` / `il_preview` / `il_save` silently ran on the wrong file. The document that was in front before the call is now brought back, and the result reports which one is active.
+- `il_export`: a prefix ending in `_` or `-` gave double separators (`Name__01_Board.jpg`), and artboard names ending in punctuation gave a trailing `_`. Both are trimmed.
+- `il_export` / `il_preview`: the result now names the document that was exported, so a wrong-document export shows up at once.
+
 - `ae_check`: no longer reports "blur clipped to its content bounds" on shape layers that already carry a transparent padding group (a rect/ellipse with no visible fill or stroke, e.g. the `Blur Bounds` group MK.halo adds). Before, the warning fired whenever the layer bounds were smaller than 1.2x the comp, even when the blur had room.
 - `il_add`: rects, ellipses and paths no longer get Illustrator's default 1 pt black stroke when no `stroke` is given; 2-point paths stay open (3+ points close unless `closed: false`); centre/right-justified point text is now centred on / right-aligned to `x` instead of starting at it.
 - `il_to_ae`: failed with "Object is invalid": the Illustrator document reference goes stale after `saveAs`, and AE layer objects go stale after each Create Shapes command. It now works on the active document after the save and re-finds AE layers by name.
@@ -28,6 +32,8 @@
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added
+- `KAI.clipBounds(item)` (Illustrator): the bounds you actually see of a clipped group. `geometricBounds` / `visibleBounds` of a clipping group include all the hidden artwork, which broke scaling and alignment of masked art. `KAI.itemInfo` reports `clipBounds` for clipped groups.
+- `il_guide`: new notes on clipped-group bounds, "illegal text range" when reading text attributes, fitting point text to a width, working with two open documents, and not saving inside long cross-document scripts.
 - **Chat inside the apps**: the KAI MCP Bridge panel now has Chat and Activity tabs. Chat runs Claude Code headless (`claude -p`, stream-json) with only this MCP's tools, resumes the same session for follow-ups, streams replies and shows the current step live; Stop and New buttons. Uses the user's Claude Code sign-in; clear messages when Claude Code is missing or not signed in. Files in `<workDir>/chat`.
 - **Live activity feed in the KAI MCP Bridge panel** (After Effects, Premiere Pro, Illustrator), modeled on Adobe's in-app AI Assistant: every tool call shows up as a plain-language step with a running / done / error marker, the app, and how long it took. New tools: `kai_say` (short narration between steps), `kai_plan` (plan checklist with done / current step) and `kai_ask` (Proceed / Deny buttons in the panel; the tool waits for the click). Files live in `<workDir>/activity`. Panel is taller by default (340x520) and uses flat SVG icons.
 - `pr_open`: open a .prproj (there was no way to open a Premiere project before; dialogs suppressed).
