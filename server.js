@@ -12,7 +12,6 @@ import { execFile } from 'node:child_process';
 import os from 'node:os';
 import { thumbJpeg, contactSheet, extractFrame, imageDiff, sideBySide, waitForPngs } from './lib/media.js';
 import { emit, toolEvent, registerActivity } from './lib/activity.js';
-import { buildLive } from './lib/live.js';
 
 const cfg = loadConfig();
 const server = new McpServer({ name: 'kai-ae-mcp', version: '1.0.0' });
@@ -118,15 +117,6 @@ tool('ae_run_script', 'Run any ExtendScript in the open After Effects project an
   { code: z.string().describe('ExtendScript function body'), args: z.record(z.any()).optional(), undo_name: z.string().optional().describe('Undo group name; required for scripts that modify the project'), timeout_sec: z.number().optional(),
     expected_project: z.string().optional().describe('Project guard: refuse to run unless the open project path contains this text (e.g. the .aep file name). Use it for every edit to a client project.') },
   async ({ code, args, undo_name, timeout_sec, expected_project }) => text(await ae('ae_run_script', args || {}, code, { undo: undo_name, timeoutSec: timeout_sec, expectedProject: expected_project })));
-
-tool('ae_build_live', 'Build in After Effects ONE STEP AT A TIME so the work can be watched (or screen-recorded) as it happens: each step is a short script that runs as its own job; after it, the comp is shown in the viewer, the layers it added are selected in the timeline, and the tool waits pace_ms before the next step. Use it whenever someone is watching or recording, and for any build of more than a few layers: give ONE layer (or one visible change: an effect, a set of keyframes) per step with a short plain-language label, which becomes that step\'s line in the bridge panel\'s Activity feed and its Undo name. Step code is a function body with `comp` (the target comp, null until a step creates it) and `S` (an object that survives between steps; local variables do not, so re-find layers by name or keep values on S). All KAI.* and MK.* helpers are available. A failing step stops the run and reports which one.',
-  { steps: z.array(z.object({ label: z.string().describe('what this step does, in plain words, e.g. "Gold ring behind the number"'), code: z.string().describe('ExtendScript function body; `comp` and `S` are available'),
-      show_at: z.number().optional().describe('move the time indicator here (seconds) after the step'), pause_ms: z.number().optional().describe('pause after this step instead of pace_ms'), timeout_sec: z.number().optional() })).min(1),
-    comp: z.string().optional().describe('comp name the steps build in (may be created by the first step); default: the active comp'), title: z.string().optional().describe('one line shown in the Activity feed before the steps'),
-    pace_ms: z.number().optional().describe('pause between steps, default 700; 0 = as fast as After Effects allows'), reveal: z.boolean().optional().describe('show the comp and select new layers after each step (default true)'),
-    fresh: z.boolean().optional().describe('start with an empty S (default true); false when continuing an earlier run'), timeout_sec: z.number().optional(),
-    expected_project: z.string().optional().describe('Project guard: refuse to run unless the open project path contains this text.') },
-  async (a) => { const r = await buildLive(cfg, (code, args, o) => ae('ae_build_live', args, code, o), a); return r.ok ? text(r) : fail(JSON.stringify(r, null, 1)); });
 
 tool('ae_project', 'List project items (comps, footage, folders, solids) with ids, sizes, durations, file paths and missing status. Filter by type and/or a name regex.',
   { type: z.enum(['all', 'comp', 'footage', 'file', 'folder', 'solid']).optional(), name: z.string().optional().describe('regex on item name'), limit: z.number().optional() },

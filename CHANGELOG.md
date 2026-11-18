@@ -32,10 +32,6 @@
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added
-- `ae_build_live`: build in After Effects one step at a time so the work can be watched or screen-recorded as it happens. Each step is its own short job; after it the comp is shown in the viewer, the new layers are selected, the time indicator moves onto them, and the tool pauses (`pace_ms`, default 700) before the next step. Every step is one Undo group and one line in the Activity feed. The in-app chat now uses it for any After Effects build.
-- Bridge panel **Live view** (the new default): chat and activity on screen together, stacked in a tall panel and side by side in a wide one, with a step counter ("11 / 38 steps") in the tab bar. No tab switching while recording. The last view you picked is remembered.
-- `scripts/live_demo.mjs`: example live build (a made-up race anniversary title card, 38 steps).
-- Bridge panel: a finished plan from an earlier job is put away after 10 minutes.
 - `KAI.clipBounds(item)` (Illustrator): the bounds you actually see of a clipped group. `geometricBounds` / `visibleBounds` of a clipping group include all the hidden artwork, which broke scaling and alignment of masked art. `KAI.itemInfo` reports `clipBounds` for clipped groups.
 - `il_guide`: new notes on clipped-group bounds, "illegal text range" when reading text attributes, fitting point text to a width, working with two open documents, and not saving inside long cross-document scripts.
 - **Chat inside the apps**: the KAI MCP Bridge panel now has Chat and Activity tabs. Chat runs Claude Code headless (`claude -p`, stream-json) with only this MCP's tools, resumes the same session for follow-ups, streams replies and shows the current step live; Stop and New buttons. Uses the user's Claude Code sign-in; clear messages when Claude Code is missing or not signed in. Files in `<workDir>/chat`.

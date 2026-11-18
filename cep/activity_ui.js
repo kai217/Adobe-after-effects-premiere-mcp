@@ -70,8 +70,6 @@
     var key = lines.length + ':' + (lines[lines.length - 1] || '') + ':' + Math.floor(Date.now() / 5000);
     if (key === lastFeedKey) return; lastFeedKey = key;
     if (!list.length) return;
-    // live build counter in the tab bar (text of the newest ae_build_live step starts with "12/30")
-    var cnt = el('count'); if (cnt) { var top = list[0].ev, m = top.kind === 'tool' && top.tool === 'ae_build_live' ? /^(\d+)\/(\d+)/.exec(top.text || '') : null; cnt.textContent = m ? m[1] + ' / ' + m[2] + ' steps' : ''; }
     var h = '';
     for (var j = 0; j < list.length; j++) {
       var ev = list[j].ev, ic, cls = 'ev', extra = '', tag = ev.app ? '<span class="tag ' + ev.app + '">' + ev.app.toUpperCase() + '</span>' : '';
@@ -90,10 +88,7 @@
   // ---------- plan ----------
   var lastPlan = '';
   function drawPlan() {
-    var p = readJson(PLAN);
-    // A finished plan from an earlier job is put away after 10 minutes, so a new run (or a recording) starts with a clean panel.
-    try { if (p && p.steps && (p.done || []).length >= p.steps.length && Date.now() - fs.statSync(PLAN).mtimeMs > 600000) p = null; } catch (e) {}
-    var key = JSON.stringify(p);
+    var p = readJson(PLAN), key = JSON.stringify(p);
     if (key === lastPlan) return; lastPlan = key;
     if (!p || !p.steps || !p.steps.length) { el('planBox').style.display = 'none'; return; }
     el('planBox').style.display = 'block';
