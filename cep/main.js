@@ -21,6 +21,18 @@
   var appLabel = host === 'pr' ? 'Premiere Pro' : host === 'il' ? 'Illustrator' : 'After Effects';
   var me = Math.random().toString(36).slice(2, 10);
   var el = function (id) { return document.getElementById(id); };
+  // Reload on request: the MCP touches <workDir>/bridge/reload-<host>.flag (or reload.flag) after updating the panel files,
+  // so new panel code loads without anyone closing and reopening the panel.
+  (function () {
+    var loaded = Date.now();
+    setInterval(function () {
+      try {
+        var wd = (function () { try { var p = decodeURI(cep.getSystemPath('extension')).replace(/^file:\/\/\/?/, ''); if (os.platform() !== 'win32') p = '/' + p.replace(/^\//, ''); p = fs.realpathSync(p); var c = JSON.parse(fs.readFileSync(path.join(path.dirname(p), 'config.json'), 'utf8')); if (c.workDir) return c.workDir; } catch (e) {} return path.join(os.homedir(), 'KAI-AE-MCP-work'); }());
+        var names = ['reload-' + host + '.flag', 'reload.flag'];
+        for (var i = 0; i < names.length; i++) { var f = path.join(wd, 'bridge', names[i]); if (fs.existsSync(f) && fs.statSync(f).mtimeMs > loaded) { location.reload(); return; } }
+      } catch (e) {}
+    }, 2000);
+  }());
   function show(state, cls, detail) { el('state').textContent = state; el('state').className = cls; if (detail !== undefined) el('detail').textContent = detail; }
 
   if (!host) { show('Unsupported app: ' + appId, 'bad', ''); return; }

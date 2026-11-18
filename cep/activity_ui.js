@@ -4,14 +4,19 @@
   'use strict';
   var cep = window.__adobe_cep__;
   if (!cep) return;
+  function showErr(m) { var e = document.getElementById('empty'); if (e) { e.style.color = '#ff8a80'; e.textContent = 'Activity feed error: ' + m; } }
   function nodeRequire(m) {
     if (typeof require === 'function') return require(m);
     if (window.cep_node && window.cep_node.require) return window.cep_node.require(m);
     throw new Error('Node.js is not enabled');
   }
   var fs, path, os;
-  try { fs = nodeRequire('fs'); path = nodeRequire('path'); os = nodeRequire('os'); } catch (e) { return; }
-  if (window.innerWidth < 50 && window.innerHeight < 50) return; // headless copy
+  try { fs = nodeRequire('fs'); path = nodeRequire('path'); os = nodeRequire('os'); } catch (e) { showErr('Node.js is off in this panel: ' + e.message); return; }
+  var Buffer = window.Buffer || nodeRequire('buffer').Buffer;
+  // The headless copy (1x1, no UI) skips this. Check its extension id: a docked panel can still be 0x0 when it
+  // first loads with the workspace, and the old size check then switched the panel off for good (dead Send / empty Activity).
+  var extId = ''; try { extId = cep.getExtensionId() || ''; } catch (e) {}
+  if (extId ? /\.headless$/.test(extId) : (window.innerWidth < 50 && window.innerHeight < 50)) return;
 
   function extensionDir() {
     var p = decodeURI(cep.getSystemPath('extension'));
@@ -61,7 +66,7 @@
       if (e.kind === 'tool' && e.id) { if (byId[e.id]) { byId[e.id].ev = e; continue; } byId[e.id] = { ev: e }; list.push(byId[e.id]); }
       else list.push({ ev: e });
     }
-    list = list.slice(-60).reverse();
+    list = list.slice(-300).reverse(); // newest on top; the feed scrolls for older steps
     var key = lines.length + ':' + (lines[lines.length - 1] || '') + ':' + Math.floor(Date.now() / 5000);
     if (key === lastFeedKey) return; lastFeedKey = key;
     if (!list.length) return;
@@ -119,7 +124,8 @@
     try { window.focus(); } catch (e) {}
   }
 
-  function tick() { try { drawAsk(); drawPlan(); drawFeed(); } catch (e) {} }
+  var lastErr = '';
+  function tick() { try { drawAsk(); drawPlan(); drawFeed(); } catch (e) { var m = String(e && e.message || e); if (m !== lastErr) { lastErr = m; showErr(m); } } }
   setInterval(tick, 500);
   tick();
 }());

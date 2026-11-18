@@ -12,8 +12,13 @@
     throw new Error('Node.js is not enabled');
   }
   var fs, path, os, cp;
-  try { fs = nodeRequire('fs'); path = nodeRequire('path'); os = nodeRequire('os'); cp = nodeRequire('child_process'); } catch (e) { return; }
-  if (window.innerWidth < 50 && window.innerHeight < 50) return; // headless copy
+  try { fs = nodeRequire('fs'); path = nodeRequire('path'); os = nodeRequire('os'); cp = nodeRequire('child_process'); } catch (e) { var h = document.getElementById('chatLog'); if (h) h.innerHTML = '<div class="msg err">Chat is off: Node.js is not enabled in this panel (' + e.message + ')</div>'; return; }
+  var Buffer = window.Buffer || nodeRequire('buffer').Buffer;
+  var process = window.process || nodeRequire('process');
+  // The headless copy (1x1, no UI) skips this. Check its extension id: a docked panel can still be 0x0 when it
+  // first loads with the workspace, and the old size check then switched the panel off for good (dead Send / empty Activity).
+  var extId = ''; try { extId = cep.getExtensionId() || ''; } catch (e) {}
+  if (extId ? /\.headless$/.test(extId) : (window.innerWidth < 50 && window.innerHeight < 50)) return;
 
   var env = {}; try { env = JSON.parse(cep.getHostEnvironment()); } catch (e) {}
   var APP = env.appName === 'PPRO' ? 'Premiere Pro' : env.appName === 'ILST' ? 'Illustrator' : 'After Effects';
@@ -195,6 +200,31 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!child) { var v = input.value; input.value = ''; send(v); } }
   });
   setInterval(function () { if (child) { var s = lastStep(); if (s) working = s; draw(); } }, 700);
+
+  // ---------- prompt drop-in ----------
+  // A prompt saved as <workDir>/chat/inbox-<APP>.txt (APP = ILST, AEFT or PPRO) or inbox.txt is typed into this
+  // panel's chat box and sent, exactly as if typed here. Lets a run start with nobody at the computer (and no
+  // remote control of the screen). Only one panel picks up each file.
+  var APPCODE = env.appName || '', typing = false;
+  function takeInbox() {
+    var names = ['inbox-' + APPCODE + '.txt', 'inbox.txt'];
+    for (var i = 0; i < names.length; i++) {
+      var f = path.join(DIR, names[i]), mine = f + '.' + process.pid + '.taking';
+      try { fs.renameSync(f, mine); } catch (e) { continue; }       // another panel got it first, or no file
+      try { var t = fs.readFileSync(mine, 'utf8'); fs.unlinkSync(mine); return t; } catch (e) { return null; }
+    }
+    return null;
+  }
+  setInterval(function () {
+    if (child || typing) return;
+    var t = takeInbox(); if (!t || !(t = t.trim())) return;
+    try { document.querySelector('.tab[data-p="chatPane"]').click(); } catch (e) {}
+    typing = true; input.value = ''; var i = 0, step = Math.max(1, Math.round(t.length / 120));
+    var timer = setInterval(function () {                           // type it out so a screen recording shows the prompt
+      i = Math.min(t.length, i + step); input.value = t.slice(0, i); input.scrollTop = input.scrollHeight;
+      if (i >= t.length) { clearInterval(timer); setTimeout(function () { typing = false; input.value = ''; send(t); }, 600); }
+    }, 25);
+  }, 1000);
   window.addEventListener('resize', draw);
   draw();
 }());
