@@ -64,7 +64,7 @@ Two bridges, same file-queue design (any number of Claude sessions can share the
 
 ## Tools
 After Effects: ae_status, ae_guide, ae_check, ae_run_script, ae_project, ae_comp, ae_layer_props, ae_dump, ae_set, ae_layer,
-ae_preview, ae_compare, ae_import, ae_replace_footage, ae_save (versions), ae_open, ae_undo, ae_render, ae_build_master,
+ae_preview, ae_compare, ae_import, ae_replace_footage, ae_save (versions), ae_open, ae_undo, ae_render, ae_build_master, ae_build_live (one layer at a time, for watching or recording),
 ae_library, ae_effects, ae_export_mogrt.
 
 Premiere Pro: pr_status, pr_guide, pr_run_script, pr_project, pr_sequence, pr_import, pr_import_ae_comps (Dynamic Link),

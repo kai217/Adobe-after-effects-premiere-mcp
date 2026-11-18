@@ -16,6 +16,7 @@ const calls = [
   ['ae_layer', { comp: 'Main', layer: 'A', in_point: 1, track_matte: { layer: 'B', type: 'alpha' } }], ['ae_import', { paths: ['C:/x.mov'], folder: 'R3' }],
   ['ae_replace_footage', { item: 'x', path: 'C:/y.mov' }], ['ae_save', { mode: 'version' }], ['ae_open', { path: 'C:/a.aep' }], ['ae_undo', { steps: 2 }],
   ['ae_render', { comp: 'Main', output: 'C:/out.mp4', format: 'h264', start_frame: 0, end_frame: 10 }],
+  ['ae_build_live', { comp: 'Live', pace_ms: 0, steps: [{ label: 'New comp', code: "app.project.items.addComp('Live', 1920, 1080, 1, 5, 30);" }, { label: 'Background', code: "comp.layers.addSolid([0, 0, 0], 'BG', 1920, 1080, 1);", show_at: 1 }] }],
   ['ae_build_master', { name: 'M', width: 1080, height: 1920, fps: 23.976, duration_frames: 100, entries: [{ source: 'C1', in_frame: 0, out_frame: 49, source_frame: 0, transform_from: 'Old' }, { source: 'C:/s.mov', in_frame: 50, out_frame: 99 }], audio: [{ path: 'C:/a.wav' }], markers: [[10, 'hi']] }],
   ['ae_dump', { comp: 'Main', scope: 'tree' }], ['ae_check', { comp: 'Main' }], ['ae_guide', {}], ['ae_effects', { filter: 'glow' }], ['ae_library', { action: 'list' }],
   ['ae_run_script', { code: 'return 1;', expected_project: 'Client_v001.aep' }],
