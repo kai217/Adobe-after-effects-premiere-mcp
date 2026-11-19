@@ -12,6 +12,7 @@ import { execFile } from 'node:child_process';
 import os from 'node:os';
 import { thumbJpeg, contactSheet, extractFrame, imageDiff, sideBySide, waitForPngs } from './lib/media.js';
 import { emit, toolEvent, registerActivity } from './lib/activity.js';
+import { buildLive, buildLiveIL } from './lib/live.js';
 
 const cfg = loadConfig();
 const server = new McpServer({ name: 'kai-ae-mcp', version: '1.0.0' });
@@ -59,7 +60,7 @@ function tool(name, description, shape, handler) {
 }
 
 // =====================================================================
-tool('ae_status', 'Check that After Effects is reachable and report the open project, active comp, dirty state, version, and anything missing (footage, fonts, effects). Call this first in a session, then call ae_guide once to read the known gotchas before building.', {},
+tool('ae_status', 'Check that After Effects is reachable and report the open project, active comp, dirty state, version, and anything missing (footage, effects; ae_check lists missing fonts). Call this first in a session, then call ae_guide once to read the known gotchas before building.', {},
   async () => {
     const running = await isAERunning();
     if (!running) return text({ running: false, afterFX: findAfterFX(cfg), hint: 'Open After Effects and your project.' });
@@ -67,7 +68,9 @@ tool('ae_status', 'Check that After Effects is reachable and report the open pro
       var p = app.project, o = { version: app.version, project: p.file ? p.file.fsName : null, dirty: p.dirty, items: p.numItems,
         active: (p.activeItem && p.activeItem instanceof CompItem) ? KAI.itemInfo(p.activeItem) : null, missingFootage: [], missingFonts: [], missingEffects: [] };
       for (var i = 1; i <= p.numItems; i++) { var it = p.item(i); try { if (it instanceof FootageItem && it.footageMissing) o.missingFootage.push(it.name); } catch (e) {} }
-      try { var m = app.fonts.missingOrSubstitutedFonts; for (var j = 0; j < m.length; j++) o.missingFonts.push(m[j].postScriptName || m[j].familyName); } catch (e) { o.missingFonts = 'unavailable'; }
+      // Fonts are not checked here: touching app.fonts makes After Effects list every installed font, which can hold the app for a long time
+      // right after launch. ae_check reports missing fonts for the comps it checks.
+      o.missingFonts = 'not checked (use ae_check)';
       var inst = {}; try { for (var k = 0; k < app.effects.length; k++) inst[app.effects[k].matchName] = 1; } catch (e) {}
       var seen = {};
       for (var i2 = 1; i2 <= p.numItems; i2++) { var c = p.item(i2); if (!(c instanceof CompItem)) continue;
@@ -117,6 +120,25 @@ tool('ae_run_script', 'Run any ExtendScript in the open After Effects project an
   { code: z.string().describe('ExtendScript function body'), args: z.record(z.any()).optional(), undo_name: z.string().optional().describe('Undo group name; required for scripts that modify the project'), timeout_sec: z.number().optional(),
     expected_project: z.string().optional().describe('Project guard: refuse to run unless the open project path contains this text (e.g. the .aep file name). Use it for every edit to a client project.') },
   async ({ code, args, undo_name, timeout_sec, expected_project }) => text(await ae('ae_run_script', args || {}, code, { undo: undo_name, timeoutSec: timeout_sec, expectedProject: expected_project })));
+
+tool('ae_build_live', 'Build in After Effects ONE STEP AT A TIME so the work can be watched (or screen-recorded) as it happens: each step is a short script that runs as its own job; after it, the comp is shown in the viewer, the layers it added are selected in the timeline, and the tool waits pace_ms before the next step. Use it whenever someone is watching or recording, and for any build of more than a few layers: give ONE layer (or one visible change: an effect, a set of keyframes) per step with a short plain-language label, which becomes that step\'s line in the bridge panel\'s Activity feed and its Undo name. Step code is a function body with `comp` (the target comp, null until a step creates it) and `S` (an object that survives between steps; local variables do not, so re-find layers by name or keep values on S). All KAI.* and MK.* helpers are available. A failing step stops the run and reports which one.',
+  { steps: z.array(z.object({ label: z.string().describe('what this step does, in plain words, e.g. "Gold ring behind the number"'), code: z.string().describe('ExtendScript function body; `comp` and `S` are available'),
+      show_at: z.number().optional().describe('move the time indicator here (seconds) after the step'), comp: z.string().optional().describe('comp this step works in, when one run builds several comps; default: the run\'s comp'),
+      play: z.boolean().optional().describe('after the step, play the comp\'s preview from the start; set pause_ms to how long it should play'), pause_ms: z.number().optional().describe('pause after this step instead of pace_ms'), timeout_sec: z.number().optional() })).min(1),
+    comp: z.string().optional().describe('comp name the steps build in (may be created by the first step); default: the active comp'), title: z.string().optional().describe('one line shown in the Activity feed before the steps'),
+    pace_ms: z.number().optional().describe('pause between steps, default 700; 0 = as fast as After Effects allows'), reveal: z.boolean().optional().describe('show the comp and select new layers after each step (default true)'), keyframes: z.boolean().optional().describe('open the keyframed properties of the new layers in the timeline, like pressing U (default true)'),
+    fresh: z.boolean().optional().describe('start with an empty S (default true); false when continuing an earlier run'), timeout_sec: z.number().optional(),
+    expected_project: z.string().optional().describe('Project guard: refuse to run unless the open project path contains this text.') },
+  async (a) => { const r = await buildLive(cfg, (code, args, o) => ae('ae_build_live', args, code, o), a); return r.ok ? text(r) : fail(JSON.stringify(r, null, 1)); });
+
+tool('il_build_live', 'Build in Illustrator ONE STEP AT A TIME so the work can be watched as it happens: each step is a short script that runs as its own job; before it, the view is fitted to the artboard the step works on (`artboard`), and after it the document is redrawn and the tool waits pace_ms. Use it whenever someone is watching, and for any build of more than a few objects: give ONE object or one visible change per step with a short plain-language label, which becomes that step\'s line in the bridge panel\'s Activity feed. Step code is a function body with `doc` (the active document, null until a step creates one) and `S` (an object that survives between steps; local variables do not, so re-find items by name or keep values on S). All KAI.* Illustrator helpers are available. A failing step stops the run and reports which one.',
+  { steps: z.array(z.object({ label: z.string().describe('what this step does, in plain words, e.g. "Headline on the poster"'), code: z.string().describe('ExtendScript function body; `doc` and `S` are available'),
+      artboard: z.union([z.number(), z.string()]).optional().describe('artboard this step works on (index from 0, or name): the view is fitted to it first'), pause_ms: z.number().optional().describe('pause after this step instead of pace_ms'), timeout_sec: z.number().optional() })).min(1),
+    artboard: z.union([z.number(), z.string()]).optional().describe('artboard for every step that does not name its own'), title: z.string().optional().describe('one line shown in the Activity feed before the steps'),
+    pace_ms: z.number().optional().describe('pause between steps, default 700; 0 = as fast as Illustrator allows'), follow: z.boolean().optional().describe('fit the view to each step\'s artboard (default true)'),
+    fresh: z.boolean().optional().describe('start with an empty S (default true); false when continuing an earlier run'), timeout_sec: z.number().optional(),
+    expected_project: z.string().optional().describe('Document guard: refuse to run unless the active document path contains this text.') },
+  async (a) => { const r = await buildLiveIL(cfg, (code, args, o) => ae('il_build_live', args, code, { ...o, host: 'il' }), a); return r.ok ? text(r) : fail(JSON.stringify(r, null, 1)); });
 
 tool('ae_project', 'List project items (comps, footage, folders, solids) with ids, sizes, durations, file paths and missing status. Filter by type and/or a name regex.',
   { type: z.enum(['all', 'comp', 'footage', 'file', 'folder', 'solid']).optional(), name: z.string().optional().describe('regex on item name'), limit: z.number().optional() },

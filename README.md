@@ -64,7 +64,7 @@ Two bridges, same file-queue design (any number of Claude sessions can share the
 
 ## Tools
 After Effects: ae_status, ae_guide, ae_check, ae_run_script, ae_project, ae_comp, ae_layer_props, ae_dump, ae_set, ae_layer,
-ae_preview, ae_compare, ae_import, ae_replace_footage, ae_save (versions), ae_open, ae_undo, ae_render, ae_build_master,
+ae_preview, ae_compare, ae_import, ae_replace_footage, ae_save (versions), ae_open, ae_undo, ae_render, ae_build_master, ae_build_live (one step at a time, so the build can be watched),
 ae_library, ae_effects, ae_export_mogrt.
 
 Premiere Pro: pr_status, pr_guide, pr_run_script, pr_project, pr_sequence, pr_import, pr_import_ae_comps (Dynamic Link),
@@ -73,7 +73,7 @@ pr_build_cut (sequence from in/out ranges), pr_assemble (multi-track timed edit 
 
 Illustrator: il_status, il_guide, il_run_script, il_document, il_new_document, il_open, il_save (versions), il_add (rect/ellipse/line/path/
 text/image/svg), il_set, il_export (png/jpg/svg/pdf per artboard), il_preview, il_trace (Image Trace to vectors), il_to_ae (Illustrator
-layers -> AE comp, optionally native shape layers).
+layers -> AE comp, optionally native shape layers), il_build_live (one step at a time, view follows the artboard).
 
 Premiere UXP: uxp_status, pr_uxp_run, pr_effects_remove, pr_effects_add, pr_effects_list, pr_clip_params, pr_clip_param_set.
 

@@ -7,6 +7,8 @@ Every rule here came from a real bug hit while building with this MCP.
 - Never concatenate an array into a string (`'[' + color + ']'`). In AE's ExtendScript that throws "invalid numeric result (divide by zero?)". Use `color.join(',')`.
 - `instanceof TextLayer` / `ShapeLayer` can return wrong results inside eval'd jobs. Use `layer.matchName` ("ADBE Text Layer", "ADBE Vector Layer", ...) or `KAI.layerType(layer)`.
 
+- Never nest ternaries without parentheses. `a ? b : c ? d : e` is parsed as `(a ? b : c) ? d : e` in ExtendScript, so the wrong branch runs with no error. Use `if` statements, or write `a ? b : (c ? d : e)`.
+
 ## Property references
 - Adding a property to a shape group (rect, fill, stroke, another group) invalidates earlier references to its siblings ("Object is invalid"). Re-resolve from the layer by name after every `addProperty`. `MK.box/ellipse/path` return handles whose accessors do this for you: `h.size()`, `h.pos()`, `h.fill()`.
 - Sibling properties can share a matchName (40 `ADBE Vector Group`s in one layer). Address them by index, not by matchName. `KAI.walk` paths add `[i]` for duplicates, and `KAI.prop` understands it.
@@ -62,3 +64,11 @@ Setting `timeRemapEnabled = true` and then calling `setValueAtTime` on Time Rema
 - `comp.exportAsMotionGraphicsTemplate(overwrite, path)` treats `path` as a folder and names the file after `motionGraphicsTemplateName`.
 - After `app.executeCommand(...)` the CompItem itself can go stale: keep its id and use `app.project.itemByID(id)`.
 - Layers have no `moveTo()`: use moveToBeginning/moveToEnd/moveBefore/moveAfter.
+
+## Live builds (ae_build_live)
+- After Effects only repaints when a script ends, so one script that makes 30 layers shows them all at once. `ae_build_live` runs each step as its own short job with a pause between them: every layer lands in the timeline and the viewer before the next one starts. Use it whenever someone is watching, with ONE layer (or one visible change) per step and a short plain label.
+- Steps do not share local variables. Step code gets `comp` and `S` (an object that survives between steps); re-find layers by name (`comp.layer('Sun')`) or keep values on `S`. `comp` is null until a step creates the comp named in `comp`. A step can name its own `comp` when one run builds several comps.
+- After each step the comp is opened in the viewer, the layers the step added are selected, their keyframed properties are opened (the U key; `keyframes: false` turns this off), and the time indicator moves onto them (or to the step's `show_at`). Each step is one Undo group and one line in the bridge panel's Activity feed ("7/38  Skyline tower 1").
+- `play: true` on a step starts the comp's preview from the beginning after the step. The preview stops when the next step's script runs, so give that step a `pause_ms` as long as the playback should last.
+- Give every layer a unique name. A layer object kept across an operation that adds layers can point at a different layer afterwards, so helpers should return names and look layers up again.
+- Do not send other work to After Effects while a live build runs (a second chat, another tool call): After Effects runs one script at a time.

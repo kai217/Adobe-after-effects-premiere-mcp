@@ -98,6 +98,8 @@
 
   // ---------- responsiveness probe (only while idle) ----------
   function probe() {
+    // A probe whose reply never arrives (dropped during a dialog or a panel reload) must not block the panel forever: ask again.
+    if (probeSent && Date.now() - probeSent > 5000) probeSent = 0;
     if (renderEngine !== false || inFlight || probeSent) return;
     probeSent = Date.now();
     eval_('1', function () { probeSent = 0; });

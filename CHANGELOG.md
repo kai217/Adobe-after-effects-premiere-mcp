@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Fixed
+- Bridge panel: one lost reply to the panel's "are you there" probe (during a dialog, a panel reload, or a refused script) left the panel on "Not responding" for good and no further job ran until the app was restarted. An unanswered probe is now asked again after 5 seconds.
+- After Effects: while After Effects was busy inside a long script the panel's heartbeat went stale, so the next tool call fell back to `AfterFX.exe -r`. After Effects refuses a second script and shows a modal "second script" warning that blocks the app. The fallback is now refused with "still running an earlier script" when the panel reported a job in flight.
+- `ae_status`: no longer reads `app.fonts`. That makes After Effects list every installed font, which can hold the app for a long time right after launch on a machine with many fonts (about 30 seconds measured), with repeated calls stacking up behind it. `ae_check` still reports missing fonts for the comps it checks.
 - `il_to_ae`: sending a second document to After Effects left that document in front in Illustrator, so the next `il_export` / `il_preview` / `il_save` silently ran on the wrong file. The document that was in front before the call is now brought back, and the result reports which one is active.
 - `il_export`: a prefix ending in `_` or `-` gave double separators (`Name__01_Board.jpg`), and artboard names ending in punctuation gave a trailing `_`. Both are trimmed.
 - `il_export` / `il_preview`: the result now names the document that was exported, so a wrong-document export shows up at once.
@@ -32,6 +35,8 @@
 - `pr_clip_params`: values came back wrapped twice (`{ value: { value: 25 } }`); now plain values.
 
 ### Added
+- `ae_build_live`: build in After Effects one step at a time so the work can be followed as it happens. Each step is its own short job; after it the comp is shown in the viewer, the new layers are selected, their keyframed properties are opened in the timeline (`keyframes`, default on), the time indicator moves onto them, and the tool pauses (`pace_ms`, default 700) before the next step. A step can name its own `comp` (one run can build several comps) and can `play` the comp's preview. Every step is one Undo group and one line in the Activity feed.
+- `il_build_live`: the same for Illustrator. Each step is its own job; the view is fitted to the step's `artboard` first, so the viewer follows the work from board to board, and the document is redrawn after every step.
 - `KAI.clipBounds(item)` (Illustrator): the bounds you actually see of a clipped group. `geometricBounds` / `visibleBounds` of a clipping group include all the hidden artwork, which broke scaling and alignment of masked art. `KAI.itemInfo` reports `clipBounds` for clipped groups.
 - `il_guide`: new notes on clipped-group bounds, "illegal text range" when reading text attributes, fitting point text to a width, working with two open documents, and not saving inside long cross-document scripts.
 - **Chat inside the apps**: the KAI MCP Bridge panel now has Chat and Activity tabs. Chat runs Claude Code headless (`claude -p`, stream-json) with only this MCP's tools, resumes the same session for follow-ups, streams replies and shows the current step live; Stop and New buttons. Uses the user's Claude Code sign-in; clear messages when Claude Code is missing or not signed in. Files in `<workDir>/chat`.

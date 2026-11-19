@@ -58,3 +58,18 @@ Illustrator -> After Effects (il_to_ae)
 Image Trace (il_trace)
 - `placedItem.trace()` returns a PluginItem; `tracing.tracingOptions.loadFromPreset(name)` uses the preset names shown in the
   Image Trace panel; `expandTracing()` gives a GroupItem of paths. Tracing big photos is slow (run with a long timeout).
+
+Live builds (il_build_live)
+- Illustrator repaints when a script ends. `il_build_live` runs each step as its own job and redraws after it, so every object appears
+  before the next one starts. Use ONE object or one visible change per step, with a short plain label.
+- Give each step its `artboard` (index or name): the view is fitted to that artboard before the step runs, so the viewer follows the work
+  instead of staying at whatever zoom the document opened with. `app.executeMenuCommand('fitin')` does not reliably change the view from a
+  script; set `document.views[0].zoom` and `.centerPoint` (this is what il_build_live does).
+- Steps do not share local variables. Step code gets `doc` and `S` (an object that survives between steps); re-find items by name.
+- For a file with many artboards, keep one top-level layer per artboard and put that board's parts in sub-layers, so the Layers panel
+  reads as a list of boards.
+- Artboards must stay inside the canvas (about 16383 pt square). Lay a large set out in rows centred on the origin.
+
+ExtendScript
+- Never nest ternaries without parentheses. `a ? b : c ? d : e` is parsed as `(a ? b : c) ? d : e`, so the wrong branch runs with no
+  error (centred text came out right-aligned). Use `if` statements, or write `a ? b : (c ? d : e)`.
