@@ -3,6 +3,19 @@
 ## Unreleased
 
 ### Fixed
+- After Effects: after After Effects was closed or crashed in the middle of a job, every call answered "still running an earlier script" for 15 minutes, even with a freshly opened After Effects. The server now compares the start time of the running After Effects with the leftover job: a restarted app clears it at once.
+- Bridge panel: a job claimed by a panel that no longer exists (the app was closed or crashed mid-job) stayed in the queue as `*.running.*`. The panel moves these aside when it starts.
+- Bridge panel: a reply that arrives after its job was cleared can no longer mark the next job as finished.
+- After Effects Safe Mode (offered after a crash or a forced quit) loads no extensions, so the bridge was silently off and calls timed out. Calls now say that After Effects is in Safe Mode and how to leave it; `kai_doctor` reports it too.
+- `ae_status` could hold After Effects for a minute on a big project (it walks every layer of every comp looking for missing effects). Over 300 project items the scan is skipped unless `full: true` is given.
+
+### Added
+- `kai_reset`: unsticks the bridge after a job that never reported back (a render stopped in the app, a script cut short by a dialog, an app closed mid-job). It moves the leftover job aside, tells the panel to drop it and reports whether the app answers again. Nothing is closed or restarted.
+- `ae_render` `queue_only: true`: adds the comp to the Render Queue with its settings and output path without starting the render.
+- `kai_doctor`: reports the After Effects process (window title, Safe Mode, whether it answers) and leftover jobs.
+- `ae_guide`: notes on big projects (batches, saving, timeouts), previews, renders, quitting After Effects safely, re-runnable build scripts and text in other languages.
+
+### Fixed (earlier)
 - Bridge panel: one lost reply to the panel's "are you there" probe (during a dialog, a panel reload, or a refused script) left the panel on "Not responding" for good and no further job ran until the app was restarted. An unanswered probe is now asked again after 5 seconds.
 - After Effects: while After Effects was busy inside a long script the panel's heartbeat went stale, so the next tool call fell back to `AfterFX.exe -r`. After Effects refuses a second script and shows a modal "second script" warning that blocks the app. The fallback is now refused with "still running an earlier script" when the panel reported a job in flight.
 - `ae_status`: no longer reads `app.fonts`. That makes After Effects list every installed font, which can hold the app for a long time right after launch on a machine with many fonts (about 30 seconds measured), with repeated calls stacking up behind it. `ae_check` still reports missing fonts for the comps it checks.

@@ -64,6 +64,7 @@
   // ---------- state ----------
   var renderEngine = null;     // true inside AE's windowless Dynamic Link engine: stay idle there
   var inFlight = null;         // { job, since }
+  var current = null;          // { job, claimed, resultPath } of the job in flight
   var lastReply = 0;           // last time the app answered any script
   var probeSent = 0;           // time an unanswered probe was sent (0 = none outstanding)
   var lastJob = '';
@@ -131,9 +132,11 @@
     code = code.replace(/^#target.*$/m, ''); // preprocessor line is for the command-line runner only
     var job = name.replace(/\.jsx$/, '');
     inFlight = { job: job, since: Date.now() };
+    current = { job: job, claimed: claimed, resultPath: resultPath };
     heartbeat();
     eval_(code, function (r) {
-      inFlight = null; jobsRun++; lastJob = job + ' (' + new Date().toTimeString().slice(0, 8) + ')';
+      if (!inFlight || inFlight.job !== job) return; // already cleared by a reset: a late reply must not touch the next job
+      inFlight = null; current = null; jobsRun++; lastJob = job + ' (' + new Date().toTimeString().slice(0, 8) + ')';
       try { fs.unlinkSync(claimed); } catch (e) {}
       // The job writes its own result. If it never got that far (syntax error before our try/catch), report the raw error.
       if (resultPath && !fs.existsSync(resultPath)) {
@@ -146,11 +149,42 @@
     });
   }
 
+  // Jobs left half-run by a crashed After Effects (claimed by an old panel instance) are never re-run: move them aside on start.
+  function clearOrphans() {
+    try {
+      fs.readdirSync(QUEUE).forEach(function (n) {
+        if (/\.running\./.test(n) && !/\.stale$/.test(n) && n.indexOf('.running.' + me) < 0) {
+          try { fs.renameSync(path.join(QUEUE, n), path.join(QUEUE, n + '.stale')); } catch (e) {}
+        }
+      });
+    } catch (e) {}
+  }
+  // Reset on request (kai_reset touches <workDir>/bridge/reset-<host>.flag): drop a job that will never report back
+  // (a render stopped in the app, a script cut short by a dialog), so the queue is usable again without restarting the app.
+  // If the app is in fact still inside that script, the probe stays unanswered and no new job is sent to it.
+  var resetSeen = Date.now();
+  function checkReset() {
+    var f = path.join(BRIDGE, 'reset-' + host + '.flag'), m = 0;
+    try { m = fs.statSync(f).mtimeMs; } catch (e) { return; }
+    if (m <= resetSeen) return;
+    resetSeen = m;
+    if (!own()) return;
+    if (inFlight && current) {
+      try { fs.renameSync(current.claimed, current.claimed + '.stale'); } catch (e) {}
+      if (current.resultPath && !fs.existsSync(current.resultPath)) writeAtomic(current.resultPath, JSON.stringify({ id: current.job, ok: false, error: 'Cleared by kai_reset before the script reported back.' }));
+      lastJob = current.job + ' (reset)';
+    }
+    inFlight = null; current = null; probeSent = 0;
+    clearOrphans();
+    heartbeat(); probe();
+  }
   function start() {
+    clearOrphans();
     show('Starting…', 'muted', '');
     setInterval(heartbeat, 1000);
     setInterval(tick, 150);
     setInterval(probe, 2000);
+    setInterval(checkReset, 1000);
     heartbeat(); probe();
   }
 

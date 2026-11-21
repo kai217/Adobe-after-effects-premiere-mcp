@@ -41,6 +41,14 @@ Every rule here came from a real bug hit while building with this MCP.
 - Shared child comps (e.g. "V# Original 16x9") are used by several masters. Editing them changes every master.
 - Saving: `ae_save` with mode `version` writes a new numbered file and leaves the original untouched.
 - Don't render big projects to check work. Use `ae_preview` frames (and `ae_check`) instead.
+- `ae_render` locks After Effects until the render ends. Only render when the user asked for one. A render stopped from the app can leave the job stuck, and every later call answers "busy": `kai_reset` clears it. `queue_only: true` adds the item to the Render Queue without starting it.
+- One `ae_preview` at a time, with a short frame list on heavy master comps. Several preview calls sent together stack up and After Effects shows "Not Responding" until all of them are done.
+- Big projects (hundreds of items): work in small batches (about 8 comps per script), save after each batch, and leave a pause between scripts. A script that runs longer than the client's own call limit still finishes in After Effects: the call reports a timeout, the work is done. Check the result with a small script before running it again.
+- `ae_status` walks the whole project. On a big project it skips the missing-effects scan; for a quick "is it alive" use a one-line `ae_run_script` (`return app.project.numItems;`).
+- Saving a large project takes time (about 30 s for a 150 MB file). Give the script that saves a long `timeout_sec`.
+- Never force-quit After Effects (`taskkill /F`, End Task). On the next launch it offers Safe Mode, and Safe Mode loads no extensions, so the bridge is off. Close it normally (File > Exit, or `taskkill /IM AfterFX.exe` without `/F`), wait for the process to end, then open it with the project. `kai_doctor` reports Safe Mode.
+- Build scripts that can be run again: have the script remove what it made last time (by folder or name) and rebuild, so a batch that was cut short is simply run again.
+- Text in other languages: check that the font has the glyphs before setting the text (a missing glyph shows as a box or falls back silently). Measure each layer with `sourceRectAtTime` after setting it and fit by line breaks first, scale second; keep one scale for layers that belong together.
 
 ## Checking your work
 - Check at full resolution (`ae_preview` resolution 1) and zoom into edges. Quarter-res contact sheets hide clipped blurs, slivers and peeking shapes.

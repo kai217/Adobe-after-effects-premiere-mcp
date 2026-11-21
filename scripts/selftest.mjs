@@ -40,7 +40,7 @@ const calls = [
   ['ae_apply_preset', { comp: 'Main', layers: ['/Title.*/', 2], preset: 'C:/p.ffx', time_seconds: 1 }],
   ['pr_markers', { action: 'add', markers: [{ time: 3, name: 'Act 2', color: 1 }] }], ['pr_markers', { action: 'clear', from_time: 0, to_time: 10 }],
   ['pr_captions', { srt: 'C:/a.srt' }],
-  ['pr_save', { mode: 'version' }], ['pr_open', { path: 'C:/x.prproj' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}],
+  ['pr_save', { mode: 'version' }], ['pr_open', { path: 'C:/x.prproj' }], ['pr_export', { output: '/tmp/kai-selftest/out.mp4', preset: 'C:/p.epr' }], ['kai_doctor', {}], ['kai_reset', {}], ['ae_status', { full: true }], ['ae_render', { comp: 'Main', output: 'C:/out.mov', format: 'prores', queue_only: true }],
   ['kai_plan', { title: 'R4 notes', steps: ['Space the panels', 'Bigger hex cluster', 'Finale copy'] }], ['kai_plan', { done: [0], current: 1 }],
   ['kai_say', { text: 'Panels spaced. Next: hex cluster.' }], ['kai_ask', { question: 'Overwrite the R3 project?', timeout_sec: 1 }]];
 let bad = 0;

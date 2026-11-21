@@ -60,11 +60,11 @@ function tool(name, description, shape, handler) {
 }
 
 // =====================================================================
-tool('ae_status', 'Check that After Effects is reachable and report the open project, active comp, dirty state, version, and anything missing (footage, effects; ae_check lists missing fonts). Call this first in a session, then call ae_guide once to read the known gotchas before building.', {},
-  async () => {
+tool('ae_status', 'Check that After Effects is reachable and report the open project, active comp, dirty state, version, and anything missing (footage, effects; ae_check lists missing fonts). Call this first in a session, then call ae_guide once to read the known gotchas before building. On projects with more than 300 items the missing-effects scan is skipped (it walks every layer of every comp and can hold After Effects for a minute); full: true forces it.', { full: z.boolean().optional() },
+  async (a) => {
     const running = await isAERunning();
     if (!running) return text({ running: false, afterFX: findAfterFX(cfg), hint: 'Open After Effects and your project.' });
-    const r = await ae('ae_status', {}, `
+    const r = await ae('ae_status', { full: !!a.full }, `
       var p = app.project, o = { version: app.version, project: p.file ? p.file.fsName : null, dirty: p.dirty, items: p.numItems,
         active: (p.activeItem && p.activeItem instanceof CompItem) ? KAI.itemInfo(p.activeItem) : null, missingFootage: [], missingFonts: [], missingEffects: [] };
       for (var i = 1; i <= p.numItems; i++) { var it = p.item(i); try { if (it instanceof FootageItem && it.footageMissing) o.missingFootage.push(it.name); } catch (e) {} }
@@ -72,8 +72,9 @@ tool('ae_status', 'Check that After Effects is reachable and report the open pro
       // right after launch. ae_check reports missing fonts for the comps it checks.
       o.missingFonts = 'not checked (use ae_check)';
       var inst = {}; try { for (var k = 0; k < app.effects.length; k++) inst[app.effects[k].matchName] = 1; } catch (e) {}
-      var seen = {};
-      for (var i2 = 1; i2 <= p.numItems; i2++) { var c = p.item(i2); if (!(c instanceof CompItem)) continue;
+      var seen = {}, scanFx = ARGS.full || p.numItems <= 300;
+      if (!scanFx) o.missingEffects = 'not checked (' + p.numItems + ' items; pass full: true to scan every comp)';
+      for (var i2 = 1; scanFx && i2 <= p.numItems; i2++) { var c = p.item(i2); if (!(c instanceof CompItem)) continue;
         for (var l = 1; l <= c.numLayers; l++) { var fx; try { fx = c.layer(l).property('ADBE Effect Parade'); } catch (e) { continue; } if (!fx) continue;
           for (var f = 1; f <= fx.numProperties; f++) { var mn = fx.property(f).matchName; if (!inst[mn] && !seen[mn]) { seen[mn] = 1; o.missingEffects.push(mn + ' (' + c.name + ' / ' + c.layer(l).name + ')'); } } } }
       o.scriptingWriteAllowed = true;
@@ -251,7 +252,7 @@ async function renderFrames(compRef, times, frames, resolution) {
   return r;
 }
 
-tool('ae_preview', 'Render frames of a comp (inside AE, no screen takeover) and show them. Give times (comp seconds) or frames. Returns one contact sheet (default) or individual images. resolution: 1 full, 2 half, 4 quarter (default 4, fastest).',
+tool('ae_preview', 'Render frames of a comp (inside AE, no screen takeover) and show them. Give times (comp seconds) or frames. Returns one contact sheet (default) or individual images. resolution: 1 full, 2 half, 4 quarter (default 4, fastest). After Effects is busy while the frames render: send one ae_preview at a time, and keep the frame list short on heavy master comps.',
   { comp: z.string().optional(), times: z.array(z.number()).optional(), frames: z.array(z.number()).optional(), resolution: z.number().optional(), sheet: z.boolean().optional(), max_width: z.number().optional() },
   async (a) => {
     if (!a.times && !a.frames) return fail('give times or frames');
@@ -332,12 +333,12 @@ tool('ae_undo', 'Undo the last N actions in After Effects (each AI edit is one n
     for (var i = 0; i < n; i++) app.executeCommand(id); return { undone: n };`)));
 
 // ---------- rendering ----------
-tool('ae_render', 'Render a comp (or a frame range of it) to a file through the Render Queue. format: "h264" (MP4), "prores", "png" (sequence). Frame numbers are comp frames from 0. Handles comps with a display start time. AE is busy until it finishes.',
+tool('ae_render', 'Render a comp (or a frame range of it) to a file through the Render Queue. format: "h264" (MP4), "prores", "png" (sequence). Frame numbers are comp frames from 0. Handles comps with a display start time. After Effects is locked for the whole render, and a render stopped from the app can leave the job stuck (kai_reset clears it), so only render when the user asked for a render; to check work use ae_preview. queue_only: true adds the item to the Render Queue with its settings and output path and does not start it (the user presses Render, or sends it to Media Encoder).',
   { comp: z.string().optional(), output: z.string().describe('output file path (for png use a folder path)'), format: z.enum(['h264', 'prores', 'prores_alpha', 'png']).default('h264').describe('prores_alpha = .mov with transparency (turn off background layers first)'),
-    start_frame: z.number().optional(), end_frame: z.number().optional().describe('inclusive'), half_res: z.boolean().optional(), timeout_sec: z.number().optional() },
+    start_frame: z.number().optional(), end_frame: z.number().optional().describe('inclusive'), half_res: z.boolean().optional(), queue_only: z.boolean().optional(), timeout_sec: z.number().optional() },
   async (a) => text(await ae('ae_render', a, `
     var c = KAI.comp(ARGS.comp), RQ = app.project.renderQueue;
-    for (var i = RQ.numItems; i >= 1; i--) { try { if (RQ.item(i).status == RQItemStatus.QUEUED) RQ.item(i).render = false; } catch (e) {} }
+    if (!ARGS.queue_only) for (var i = RQ.numItems; i >= 1; i--) { try { if (RQ.item(i).status == RQItemStatus.QUEUED) RQ.item(i).render = false; } catch (e) {} }
     var it = RQ.items.add(c);
     var s = ARGS.start_frame || 0, e = (ARGS.end_frame !== undefined ? ARGS.end_frame + 1 : Math.round(c.duration * c.frameRate));
     it.timeSpanStart = c.displayStartTime + s / c.frameRate; it.timeSpanDuration = (e - s) / c.frameRate;
@@ -350,6 +351,7 @@ tool('ae_render', 'Render a comp (or a frame range of it) to a file through the 
     var outPath = ARGS.output; if (ARGS.format == 'png') { var fd = new Folder(outPath); if (!fd.exists) fd.create(); outPath = fd.fsName + '/' + c.name.replace(/[^A-Za-z0-9_-]+/g, '_') + '_[#####].png'; }
     var outFile = new File(outPath); if (!outFile.parent.exists) outFile.parent.create();
     om.file = outFile;
+    if (ARGS.queue_only) return { template: pick, output: om.file.fsName, frames: e - s, status: 'queued', note: 'Added to the Render Queue and not started.' };
     var t0 = new Date().getTime(); RQ.render();
     var st = it.status, secs = Math.round((new Date().getTime() - t0) / 1000), outName = om.file.fsName;
     if (st != RQItemStatus.DONE) { var why = { 3017: 'stopped by user', 3018: 'render error (see the AE Render Queue / log)' }[st] || ('status ' + st); try { it.remove(); } catch (x) {} throw new Error('render failed: ' + why + ' after ' + secs + 's; item removed from the Render Queue'); }
