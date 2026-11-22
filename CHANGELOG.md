@@ -8,6 +8,7 @@
 - `host_run` ran commands through cmd.exe on Windows, so PowerShell commands (`$vars`, `Get-ChildItem`, `& 'x.ps1'`) failed and `.ps1` files were blocked by the execution policy. Commands now run through PowerShell with `-ExecutionPolicy Bypass` for that call; `shell: 'cmd'` keeps the old way.
 - `ae_import`: some MP4s (social/phone exports) came in as audio only. These are now converted to ProRes 422 LT with the bundled ffmpeg and swapped in automatically (`transcoded: true` in the result).
 - Timeout errors no longer tell you to check "Allow Scripts to Write Files and Access Network" when the bridge panel is connected (it was never the cause then).
+- `host_job` answered "unknown job" for any job started from another chat or before the MCP restarted (jobs lived only in memory). Jobs are now saved to `jobs/<id>.json`; a job whose server is gone is reported as ended with the exit code unknown, and the list shows the last 24 hours.
 - `media_transcribe`: the tool description now spells out the word format (`[start, end, word, prob, isFiller]` arrays), which was easy to misread as objects.
 
 ### Added

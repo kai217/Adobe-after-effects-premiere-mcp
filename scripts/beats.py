@@ -24,19 +24,17 @@ def onset_env(y):
     flux = np.maximum(flux, 0)
     return flux / (flux.std() + 1e-9)
 
-def tempo(env, lo=70, hi=180):
+def tempo(env, lo=85, hi=180):
     fps = SR / HOP
     ac = np.correlate(env, env, mode="full")[len(env) - 1:]
-    lags = np.arange(len(ac)); bpm = 60 * fps / np.maximum(lags, 1)
-    ok = (bpm >= lo) & (bpm <= hi)
-    w = np.exp(-0.5 * (np.log2(bpm / 120.0) / 1.0) ** 2)  # mild preference around 120
-    score = np.where(ok, ac * w, -np.inf)
-    lag = int(np.argmax(score))
-    # refine with neighbours (parabolic)
-    if 1 <= lag < len(ac) - 1:
-        a, b, c = ac[lag - 1], ac[lag], ac[lag + 1]; d = (a - c) / (2 * (a - 2 * b + c) + 1e-9); lagf = lag + d
-    else: lagf = lag
-    return 60 * fps / lagf, lagf
+    ac = ac / (ac[0] + 1e-9)
+    idx = np.arange(len(ac))
+    def comb(L, K=8):  # strength of a beat period: autocorrelation at 1x..Kx the period
+        return sum(np.interp(k * L, idx, ac) for k in range(1, K + 1)) / K
+    cands = np.linspace(60 * fps / hi, 60 * fps / lo, 3000)
+    sc = np.array([comb(L) for L in cands])
+    L = cands[int(np.argmax(sc))]
+    return 60 * fps / L, L
 
 def track(env, period, tight=100.0):
     # Ellis 2007 dynamic-programming beat tracker
