@@ -80,3 +80,6 @@ Setting `timeRemapEnabled = true` and then calling `setValueAtTime` on Time Rema
 - `play: true` on a step starts the comp's preview from the beginning after the step. The preview stops when the next step's script runs, so give that step a `pause_ms` as long as the playback should last.
 - Give every layer a unique name. A layer object kept across an operation that adds layers can point at a different layer afterwards, so helpers should return names and look layers up again.
 - Do not send other work to After Effects while a live build runs (a second chat, another tool call): After Effects runs one script at a time.
+
+## app.effects is slow to index
+- `app.effects` builds the full installed-effects list on every access (about 60 ms each with ~450 effects). Never write `app.effects[i]` or `app.effects.length` inside a loop: read it once (`var FX = app.effects;`) and loop over `FX`. Indexing it directly took 29 s for one pass.

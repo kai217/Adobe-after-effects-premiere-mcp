@@ -71,7 +71,9 @@ tool('ae_status', 'Check that After Effects is reachable and report the open pro
       // Fonts are not checked here: touching app.fonts makes After Effects list every installed font, which can hold the app for a long time
       // right after launch. ae_check reports missing fonts for the comps it checks.
       o.missingFonts = 'not checked (use ae_check)';
-      var inst = {}; try { for (var k = 0; k < app.effects.length; k++) inst[app.effects[k].matchName] = 1; } catch (e) {}
+      // app.effects rebuilds the whole installed-effects list on EVERY access (about 60 ms each with ~450 effects), so indexing it inside
+      // a loop took 30-80 s and made ae_status look like a hang. Read it once into a local, and cache the names for the session.
+      var inst = $.global.KAI_FX_INSTALLED; if (!inst) { inst = {}; try { var FX = app.effects; for (var k = 0; k < FX.length; k++) inst[FX[k].matchName] = 1; } catch (e) {} $.global.KAI_FX_INSTALLED = inst; }
       var seen = {}, scanFx = ARGS.full || p.numItems <= 300;
       if (!scanFx) o.missingEffects = 'not checked (' + p.numItems + ' items; pass full: true to scan every comp)';
       for (var i2 = 1; scanFx && i2 <= p.numItems; i2++) { var c = p.item(i2); if (!(c instanceof CompItem)) continue;
@@ -287,17 +289,39 @@ tool('ae_compare', 'Compare comp frames against a reference video (e.g. the appr
   });
 
 // ---------- footage ----------
-tool('ae_import', 'Import files (footage, audio, images, .aep) into the project, optionally into a folder (created if missing). Re-uses items already imported from the same file.',
+tool('ae_import', 'Import files (footage, audio, images, .aep) into the project, optionally into a folder (created if missing). Re-uses items already imported from the same file. A video file that After Effects brings in as audio only (some phone/social MP4s) is converted to ProRes with the bundled ffmpeg and swapped in automatically (transcoded: true in the result).',
   { paths: z.array(z.string()), folder: z.string().optional(), fps: z.number().optional().describe('conform frame rate for video') },
-  async (a) => text(await ae('ae_import', a, `
+  async (a) => fixAudioOnlyImports(a, await ae('ae_import', a, `
     var fold = null; if (ARGS.folder) { fold = KAI.find(ARGS.folder, 'folder') || app.project.items.addFolder(ARGS.folder); }
     var out = [];
     for (var i = 0; i < ARGS.paths.length; i++) { var f = new File(ARGS.paths[i]); if (!f.exists) { out.push({ path: ARGS.paths[i], error: 'missing file' }); continue; }
       var it = null; for (var j = 1; j <= app.project.numItems; j++) { var x = app.project.item(j); try { if (x instanceof FootageItem && x.file && x.file.fsName.toLowerCase() == f.fsName.toLowerCase()) { it = x; break; } } catch (e) {} }
       if (!it) { it = app.project.importFile(new ImportOptions(f)); }
       if (fold) it.parentFolder = fold; if (ARGS.fps && it.mainSource && it.hasVideo) try { it.mainSource.conformFrameRate = ARGS.fps; } catch (e) {}
-      out.push(KAI.itemInfo(it)); }
+      var info = KAI.itemInfo(it); if (/\\.(mp4|m4v|mov|mxf|avi|mkv|webm)$/i.test(f.name) && !it.hasVideo && it.hasAudio) { info.audioOnly = true; info.itemId = it.id; info.path = f.fsName; } out.push(info); }
     return out;`, { undo: 'import files' })));
+
+// After Effects imports some H.264/HEVC MP4s (social exports, phone clips) as audio only. Convert those to ProRes 422 LT with
+// the bundled ffmpeg (video + audio kept) and replace the footage item, so layers get the picture.
+async function fixAudioOnlyImports(a, res) {
+  const list = Array.isArray(res) ? res : (res && Array.isArray(res.result) ? res.result : null);
+  if (!list) return text(res);
+  const ffmpeg = (await import('ffmpeg-static')).default;
+  for (const it of list) {
+    if (!it || !it.audioOnly) continue;
+    const dir = path.join(cfg.workDir, 'transcodes'); fs.mkdirSync(dir, { recursive: true });
+    const out = path.join(dir, path.basename(it.path).replace(/\.[^.]+$/, '') + '_prores.mov');
+    try {
+      if (!fs.existsSync(out)) await new Promise((ok, bad) => execFile(ffmpeg, ['-v', 'error', '-y', '-i', it.path, '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'prores_ks', '-profile:v', '1', '-pix_fmt', 'yuv422p10le', '-c:a', 'pcm_s16le', out], { maxBuffer: 1 << 24 }, (e, so, se) => e ? bad(new Error(String(se || e))) : ok()));
+      const r = await ae('ae_replace_footage', { id: it.itemId, path: out, fps: a.fps }, `
+        var it = app.project.itemByID(ARGS.id); it.replace(new File(ARGS.path)); if (ARGS.fps) try { it.mainSource.conformFrameRate = ARGS.fps; } catch (e) {}
+        return KAI.itemInfo(it);`, { undo: 'swap in ProRes' });
+      Object.assign(it, r && r.result ? r.result : r, { transcoded: true, prores: out, note: 'After Effects read this file as audio only; converted to ProRes and swapped in.' });
+      delete it.audioOnly;
+    } catch (e) { it.transcodeError = String(e.message || e); }
+  }
+  return text(res);
+}
 
 tool('ae_replace_footage', 'Swap the file behind a footage item (every layer using it updates).', { item: z.string(), path: z.string(), fps: z.number().optional() },
   async (a) => text(await ae('ae_replace_footage', a, `
@@ -417,7 +441,7 @@ tool('ae_effects', 'List effects installed in this After Effects (display name, 
   { filter: z.string().optional() },
   async (a) => text(await ae('ae_effects', a, `
     var re = ARGS.filter ? new RegExp(ARGS.filter, 'i') : null, out = [];
-    for (var i = 0; i < app.effects.length; i++) { var e = app.effects[i]; if (re && !re.test(e.displayName + ' ' + e.matchName + ' ' + e.category)) continue; out.push([e.displayName, e.matchName, e.category]); }
+    var FX = app.effects; for (var i = 0; i < FX.length; i++) { var e = FX[i]; if (re && !re.test(e.displayName + ' ' + e.matchName + ' ' + e.category)) continue; out.push([e.displayName, e.matchName, e.category]); }
     return { count: out.length, effects: out };`)));
 
 const { registerPremiere } = await import('./lib/premiere_tools.js');

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixed (found during a real 40s reel edit, Nov 22 2026)
+- `ae_status` took 30-80 s on a small project and timed out, so After Effects looked hung after every save. Cause: `app.effects` rebuilds the whole installed-effects list on every access, and the missing-effects check indexed it inside a loop (457 effects = 457 rebuilds, 29 s measured). The list is now read once and cached for the session; `ae_effects` got the same fix.
+- A call that is simply slow no longer reports "not responding (hung)": when the panel shows the timed-out job is the one still running, the error says it is still working, has not hung, and where its result will land.
+- `host_run` ran commands through cmd.exe on Windows, so PowerShell commands (`$vars`, `Get-ChildItem`, `& 'x.ps1'`) failed and `.ps1` files were blocked by the execution policy. Commands now run through PowerShell with `-ExecutionPolicy Bypass` for that call; `shell: 'cmd'` keeps the old way.
+- `ae_import`: some MP4s (social/phone exports) came in as audio only. These are now converted to ProRes 422 LT with the bundled ffmpeg and swapped in automatically (`transcoded: true` in the result).
+- `media_transcribe`: the tool description now spells out the word format (`[start, end, word, prob, isFiller]` arrays), which was easy to misread as objects.
+
+### Added
+- `media_beats`: BPM, beat grid, strongest hits (drops) and loudness per second for a song, with numpy only (no librosa). `offset` returns beats in video time; `cuts` reports how many frames each cut is off the nearest beat.
+
 ### Fixed
 - After Effects: after After Effects was closed or crashed in the middle of a job, every call answered "still running an earlier script" for 15 minutes, even with a freshly opened After Effects. The server now compares the start time of the running After Effects with the leftover job: a restarted app clears it at once.
 - Bridge panel: a job claimed by a panel that no longer exists (the app was closed or crashed mid-job) stayed in the queue as `*.running.*`. The panel moves these aside when it starts.
