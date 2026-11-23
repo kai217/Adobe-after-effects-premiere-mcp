@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added (bridge panel)
+- Bridge panel **Live** view: chat and activity on screen together (stacked in a tall panel, side by side in a wide one), with a step counter for `ae_build_live`. A finished plan is put away after 10 minutes. The panel opens on Live unless another tab was chosen last time.
+- `scripts/live_demo.mjs`: example live build (a made-up title card) to watch or record.
+
 ### Fixed (found during a real 40s reel edit, Nov 22 2026)
 - `ae_status` took 30-80 s on a small project and timed out, so After Effects looked hung after every save. Cause: `app.effects` rebuilds the whole installed-effects list on every access, and the missing-effects check indexed it inside a loop (457 effects = 457 rebuilds, 29 s measured). The list is now read once and cached for the session; `ae_effects` got the same fix.
 - A call that is simply slow no longer reports "not responding (hung)": when the panel shows the timed-out job is the one still running, the error says it is still working, has not hung, and where its result will land.

@@ -72,6 +72,7 @@
       'The user is typing to you from the KAI MCP Bridge panel inside ' + APP + '. They see your replies in a small panel, so keep each reply to a few short sentences, no code unless asked.',
       'For any job with more than two steps, call kai_plan first with every step, then update it as you go. Use kai_say for a one-line update between steps. Use kai_ask (Proceed / Deny in the panel) before anything hard to undo: overwriting or deleting files or comps, long renders.',
       'Call ae_status / pr_status / il_status and the matching *_guide once before editing. Work in duplicates of pre-comps, never change shared originals or slice the master comp. Check your work with preview frames before saying it is done.',
+      'When you build anything in After Effects (a new comp, a title, graphics, animation), use ae_build_live: one layer or one visible change per step, with a short plain label, so the user watches each layer appear in the timeline. Use ae_run_script only for reading or for one small fix.',
       'You can only use the kai-ae-mcp tools here (no shell or file editing). If something needs more than that, say so in one sentence.'
     ].join('\n');
     fs.writeFileSync(path.join(DIR, 'system.txt'), sys);
@@ -218,7 +219,7 @@
   setInterval(function () {
     if (child || typing) return;
     var t = takeInbox(); if (!t || !(t = t.trim())) return;
-    try { document.querySelector('.tab[data-p="chatPane"]').click(); } catch (e) {}
+    try { if (!document.body.classList.contains('live')) document.querySelector('.tab[data-p="chatPane"]').click(); } catch (e) {} // Live view already shows the chat
     typing = true; input.value = ''; var i = 0, step = Math.max(1, Math.round(t.length / 120));
     var timer = setInterval(function () {                           // type it out so a screen recording shows the prompt
       i = Math.min(t.length, i + step); input.value = t.slice(0, i); input.scrollTop = input.scrollHeight;
