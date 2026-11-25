@@ -91,6 +91,37 @@ After Effects graphics: titles, cards, openers, end cards, logo builds.
 4. After each step: `ae_check` on the comp, and `ae_preview` frames at full resolution where things change.
    A step that reports ok but added nothing or changed nothing is not done: check it.
 5. Look: bright, saturated, cinematic but happy; soft glows with a blurred duplicate (MK.halo), not the Glow effect.
+6. Backgrounds: the comp's background colour (`bgColor`) is NOT part of the picture; it renders transparent. Always add a
+   solid layer (`comp.layers.addSolid(...)`), optionally with a Gradient Ramp. (`comp.backgroundColor` does not exist.)
+7. What makes it look designed, not "text on a box":
+   - several elements, each with its own entrance, staggered 0.2-0.5 s apart (shape pops, a stroke drawing on, text
+     revealing per letter, lines growing, a tagline last);
+   - eased keys with overshoot (`MK.keys` eases every key; scale 0 -> 112 -> 100);
+   - motion blur on moving layers (`comp.motionBlur = true`, `layer.motionBlur = true`);
+   - depth: gradient background, soft halo under the hero shape (`MK.halo`), one accent colour family;
+   - clear layout: hero shape above, title below it, never white text over a bright shape.
+   MK helpers in every step: MK.shape(comp, name, pos), MK.ellipse(L, name, d, col), MK.box(L, name, w, h, r, col),
+   MK.path, MK.stroke(handle, col, w), MK.text(comp, str, size, col, pos, font, just, tracking), MK.centerAnchor(L),
+   MK.tr(L, 'pos'|'scale'|'rot'|'op'|'anchor'), MK.keys(prop, [[t, v], ...]), MK.halo(L, blur, opacity).
+   Text animators: the default selector shape is already Square with Smoothness 100; setting Range Shape by script
+   throws "hidden", so don't.
+
+### Recipe: animated title card (tested; copy and change the words, colours and timing)
+`ae_build_live` with comp "Title Card" and these steps:
+1. Comp and gradient background:
+   `var c = app.project.items.addComp('Title Card', 1920, 1080, 1, 6, 30); c.motionBlur = true; var bg = c.layers.addSolid([0.05, 0.06, 0.12], 'Background', 1920, 1080, 1, 6); bg.property('ADBE Effect Parade').addProperty('ADBE Ramp'); var r = bg.property('ADBE Effect Parade').property(1); r.property('ADBE Ramp-0001').setValue([960, 0]); r.property('ADBE Ramp-0002').setValue([0.16, 0.10, 0.34]); r.property('ADBE Ramp-0003').setValue([960, 1080]); r.property('ADBE Ramp-0004').setValue([0.02, 0.02, 0.07]);`
+2. Sun disc pops in:
+   `var L = MK.shape(comp, 'Sun', [960, 400]); MK.ellipse(L, 'Disc', 280, [1, 0.5, 0.15]); L.motionBlur = true; MK.keys(MK.tr(L, 'scale'), [[0, [0, 0]], [0.6, [112, 112]], [0.9, [100, 100]]]); MK.keys(MK.tr(L, 'op'), [[0, 0], [0.3, 100]]); MK.halo(L, 80, 70);`
+3. Gold ring draws on:
+   `var L = MK.shape(comp, 'Ring', [960, 400]); var H = MK.ellipse(L, 'Ring', 400, null); MK.stroke(H, [1, 0.84, 0.4], 8); L.property('ADBE Root Vectors Group').addProperty('ADBE Vector Filter - Trim'); var t = L.property('ADBE Root Vectors Group').property('ADBE Vector Filter - Trim').property('ADBE Vector Trim End'); MK.keys(t, [[0.3, 0], [1.4, 100]]); MK.keys(MK.tr(L, 'rot'), [[0.3, -120], [1.4, 0]]); L.motionBlur = true;`
+4. Title reveals letter by letter:
+   `var L = MK.text(comp, 'SAND DUNE MEDIA', 120, [1, 1, 1], [960, 690], null, null, 150); L.name = 'Title'; L.motionBlur = true; MK.centerAnchor(L); var anims = function () { return comp.layer('Title').property('ADBE Text Properties').property('ADBE Text Animators'); }; anims().addProperty('ADBE Text Animator'); var ap = function () { return anims().property(1).property('ADBE Text Animator Properties'); }; ap().addProperty('ADBE Text Opacity'); ap().addProperty('ADBE Text Position 3D'); ap().property('ADBE Text Opacity').setValue(0); ap().property('ADBE Text Position 3D').setValue([0, 80, 0]); anims().property(1).property('ADBE Text Selectors').addProperty('ADBE Text Selector'); MK.keys(anims().property(1).property('ADBE Text Selectors').property(1).property('ADBE Text Percent Start'), [[1.0, 0], [2.2, 100]]);`
+5. Gold lines grow out:
+   `var L = MK.shape(comp, 'Lines', [960, 760]); MK.box(L, 'Line', 640, 4, 2, [1, 0.84, 0.4]); MK.keys(MK.tr(L, 'scale'), [[1.8, [0, 100]], [2.5, [100, 100]]]);`
+6. Tagline rises in:
+   `var L = MK.text(comp, 'CINEMATIC STORIES', 38, [1, 0.8, 0.45], [960, 810], null, null, 500); L.name = 'Tagline'; L.motionBlur = true; MK.keys(MK.tr(L, 'op'), [[2.2, 0], [2.8, 100]]); MK.keys(MK.tr(L, 'pos'), [[2.2, [960, 830]], [2.8, [960, 810]]]);`
+Check: `ae_preview` {"comp": "Title Card", "times": [0.4, 1.2, 1.8, 2.4, 4]}: frames must differ (pop, ring drawing,
+letters arriving, tagline). Identical frames mean the animation didn't take.
 
 ## illustrator
 Design in Illustrator, animate in After Effects, cut in Premiere (all three apps on one job).
