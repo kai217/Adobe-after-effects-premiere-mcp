@@ -111,3 +111,11 @@
 - UXP effects added with `VideoFilterFactory.createComponent` may inherit the last-used values for that effect. Set every parameter you rely on.
 - After changing a clip's `end`/`start`, Premiere keeps reporting the old `inPoint`/`outPoint`; trust start/end and check frames.
 - `app.openDocument(path, true, true, true, true)` opens a project without conversion / locate-media / warning dialogs.
+
+## Overwrite edits (found on a real interview rebuild, Nov 2026)
+- `overwriteClip` drops the clip's Lumetri grade and Motion settings: re-apply both after every overwrite.
+- Overwriting a clip that has linked audio (an AE comp, a B-roll file) punches its audio into A1/A2: afterwards remove
+  every A1/A2 clip that isn't the VO or music and re-lay those.
+- Overwrites can leave zero-length or one-frame remnants: scan for them and remove them; extend an end with `clip.end`.
+- Setting `trackItem.start` does not shift the in point; `trackItem.inPoint/outPoint` can be set directly, and
+  `trackItem.move(Time)` moves a clip.

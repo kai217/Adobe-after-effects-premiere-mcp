@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added (workflows)
+- `kai_workflow`: the whole editing process, step by step, one section per job type (start, broll, interview, motion, illustrator, reformat, revision, check, deliver, failures, small-models), from the new `docs/WORKFLOWS.md`. A machine can add its own house rules in `private/WORKFLOWS_PRIVATE.md` (git-ignored); they show up as `house`.
+- Server instructions: clients that read them are told to start a job with `kai_workflow`, use only listed tool names, and read changes back before calling them done.
+- `small-models` section, written from a local Gemma session that guessed tool names, left out required arguments, used `app.project.activeComp` and reported a fade-in that never happened.
+- PR_GOTCHAS: overwrite edits drop Lumetri and Motion, punch linked audio into A1/A2 and can leave one-frame remnants.
+
 ### Added (bridge panel)
 - Bridge panel **Live** view: chat and activity on screen together (stacked in a tall panel, side by side in a wide one), with a step counter for `ae_build_live`. A finished plan is put away after 10 minutes. The panel opens on Live unless another tab was chosen last time.
 - `scripts/live_demo.mjs`: example live build (a made-up title card) to watch or record.

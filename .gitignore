@@ -7,3 +7,4 @@ C:*
 .last_start.json
 dist/
 *.bak
+private/

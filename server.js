@@ -15,7 +15,7 @@ import { emit, toolEvent, registerActivity } from './lib/activity.js';
 import { buildLive, buildLiveIL } from './lib/live.js';
 
 const cfg = loadConfig();
-const server = new McpServer({ name: 'kai-ae-mcp', version: '1.0.0' });
+const server = new McpServer({ name: 'kai-ae-mcp', version: '1.0.0' }, { instructions: 'After Effects, Premiere Pro and Illustrator tools. Before a job, call kai_workflow with the job type (start, broll, interview, motion, illustrator, reformat, revision, check, small-models) and follow its steps; read ae_guide / pr_guide / il_guide once per app. Use only tool names this server lists, with the argument names in their schemas. Never report a change as done until a read-back (ae_layer_props, ae_preview, pr_sequence, pr_preview) shows it.' });
 const LIB = path.join(ROOT, 'library');
 fs.mkdirSync(LIB, { recursive: true });
 
@@ -90,6 +90,27 @@ tool('ae_guide', 'Read this once per session before building or editing: the kno
     const g = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'docs', 'AE_GOTCHAS.md'), 'utf8');
     const kit = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'jsx', 'motionkit.jsx'), 'utf8').split('\n').filter(l => /^MK\.[A-Za-z_]+ = function|^\/\//.test(l)).join('\n');
     return text(g + '\n\n## MK helpers (available in every ae_run_script)\n' + kit);
+  });
+
+tool('kai_workflow', 'How a whole editing job runs, step by step and in order (which tools, what to check). Call it at the start of a job with the job type: start (every job), broll (B-roll / walk-through edits), interview, motion (After Effects graphics), illustrator (Illustrator to AE to Premiere), reformat (vertical/horizontal), revision (client rounds), check (before saying done, QC recipes), deliver (renders, masters, textless, stems), failures (symptom -> fix), small-models (rules for local models), house (this machine\'s own rules and setup, if present). No name lists the sections.',
+  { name: z.string().optional().describe('section: start, broll, interview, motion, illustrator, reformat, revision, check, deliver, failures, small-models, house') },
+  async ({ name }) => {
+    const here = path.dirname(fileURLToPath(import.meta.url)), read = (f) => { try { return fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n'); } catch { return ''; } };
+    const split = (doc) => { const p = doc.split(/\n(?=## )/); const intro = p.shift(); return { intro, parts: p, names: p.map(x => x.slice(3, x.indexOf('\n')).trim()) }; };
+    const pub = split(read(path.join(here, 'docs', 'WORKFLOWS.md')));
+    // Private, machine-only rules (client names, drives, house rules): private/WORKFLOWS_PRIVATE.md, never in the public repo.
+    const priv = split(read(path.join(here, 'private', 'WORKFLOWS_PRIVATE.md')));
+    const all = pub.names.concat(priv.names.length ? ['house'] : []);
+    const q = String(name || '').toLowerCase().trim();
+    if (!q) return text(pub.intro + '\nSections: ' + all.join(', ') + (priv.names.length ? '\nHouse sections: ' + priv.names.join(' | ') : ''));
+    const i = pub.names.findIndex(n => n.toLowerCase() === q);
+    if (i >= 0) return text(pub.parts[i]);
+    if (priv.names.length) {
+      if (q === 'house') return text(priv.parts.filter((x, k) => /^[123]\./.test(priv.names[k])).join('\n'));
+      const k = priv.names.findIndex(n => n.toLowerCase().includes(q.replace(/^house\s*/, '')));
+      if (k >= 0) return text(priv.parts[k]);
+    }
+    return fail('no section "' + name + '". Sections: ' + all.join(', '));
   });
 
 tool('ae_check', 'Check a comp (and every comp nested in it) for problems: expression errors, disabled expressions, missing footage and fonts, blurs on shape layers that get clipped into a square, Glow effects that shift color, and track mattes pointing at missing layers. Read-only. Run after every build or edit step.',

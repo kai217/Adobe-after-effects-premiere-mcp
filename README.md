@@ -89,6 +89,7 @@ Edit tools accept `expected_project`: the job refuses to run unless the open pro
 Every action is logged to `%USERPROFILE%\KAI-AE-MCP-work\logs\*.jsonl` (training data). Each AE edit is one named Undo step ("AI: ...").
 
 ## Agent workflow
+0. `kai_workflow`: the whole process for the job type (B-roll, interview, motion graphics, Illustrator to AE to Premiere, reformat, revision rounds, QC, delivery), from `docs/WORKFLOWS.md`. House rules for one machine go in `private/WORKFLOWS_PRIVATE.md` (git-ignored).
 1. `ae_status` / `pr_status`: confirm the app is reachable and see the open project. If not, `kai_doctor`.
 2. `ae_guide` / `pr_guide`: read the known gotchas once per session.
 3. On real projects, save a version first, duplicate the comp / clone the sequence, and edit the copy. Pass `expected_project`.
