@@ -1,7 +1,7 @@
 # Editing workflows (how a job runs from start to finish)
 
 This is the process behind every edit made with this MCP, written so a person can follow it and a model can repeat it.
-Each section is one kind of job. `kai_workflow` returns one section at a time (`name`: start, broll, interview, motion,
+Each section is one kind of job. `kai_workflow` returns one section at a time (`name`: start, broll, interview, motion (with templates),
 illustrator, reformat, revision, check, deliver, failures, small-models). The *_GOTCHAS guides (ae_guide, pr_guide, il_guide) hold the
 low-level scripting rules; this file is the order of work.
 
@@ -122,6 +122,13 @@ After Effects graphics: titles, cards, openers, end cards, logo builds.
    `var L = MK.text(comp, 'CINEMATIC STORIES', 38, [1, 0.8, 0.45], [960, 810], null, null, 500); L.name = 'Tagline'; L.motionBlur = true; MK.keys(MK.tr(L, 'op'), [[2.2, 0], [2.8, 100]]); MK.keys(MK.tr(L, 'pos'), [[2.2, [960, 830]], [2.8, [960, 810]]]);`
 Check: `ae_preview` {"comp": "Title Card", "times": [0.4, 1.2, 1.8, 2.4, 4]}: frames must differ (pop, ring drawing,
 letters arriving, tagline). Identical frames mean the animation didn't take.
+
+### Templates (ae_library)
+Finished animations are saved as templates with `ae_library` (`action: "save"`) so any model can rebuild them with
+one call: `ae_library {"action": "run", "name": ..., "args": {"text": {old: new}, "colors": {HEX: NEWHEX}, "breakdown": true}}`.
+Write templates so they can be re-run: each scene in its own pre-comp, comps replaced by name, text and colours looked
+up through the args, and the template's description says what it looks like and which text/colour keys it takes.
+A model that can't write a 6,000-character motion script can still swap words and colours in one that works.
 
 ## illustrator
 Design in Illustrator, animate in After Effects, cut in Premiere (all three apps on one job).
