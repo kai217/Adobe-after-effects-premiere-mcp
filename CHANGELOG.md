@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added (workflows)
+- `ae_library`: accepts `name` given inside `args` and keys wrapped in extra quotes (`"'FOCUS'"`), both seen from a local Gemma model that retried the same call ten times; the error now says where `name` goes.
 - `kai_workflow`: the whole editing process, step by step, one section per job type (start, broll, interview, motion, illustrator, reformat, revision, check, deliver, failures, small-models), from the new `docs/WORKFLOWS.md`. A machine can add its own house rules in `private/WORKFLOWS_PRIVATE.md` (git-ignored); they show up as `house`.
 - Server instructions: clients that read them are told to start a job with `kai_workflow`, use only listed tool names, and read changes back before calling them done.
 - `small-models` section, written from a local Gemma session that guessed tool names, left out required arguments, used `app.project.activeComp` and reported a fade-in that never happened.

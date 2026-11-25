@@ -447,8 +447,17 @@ tool('ae_library', 'Reusable script library. action "list" shows saved scripts; 
   { action: z.enum(['list', 'save', 'run', 'show']), name: z.string().optional(), description: z.string().optional(), code: z.string().optional(), args: z.record(z.any()).optional(), undo_name: z.string().optional() },
   async (a) => {
     const file = (n) => path.join(LIB, n.replace(/[^A-Za-z0-9_-]+/g, '_') + '.json');
+    // Small models often put name/action inside args, or quote keys ("'FOCUS'"): accept both instead of failing.
+    if (a.args && typeof a.args === 'object') {
+      if (!a.name && typeof a.args.name === 'string') { a.name = a.args.name; delete a.args.name; }
+      if (typeof a.args.action === 'string') delete a.args.action;
+      const unq = (o) => { if (!o || typeof o !== 'object' || Array.isArray(o)) return o; const r = {}; for (const [k, v] of Object.entries(o)) r[String(k).replace(/^\s*['"]+|['"]+\s*$/g, '')] = v; return r; };
+      if (a.args.text) a.args.text = unq(a.args.text);
+      if (a.args.colors) a.args.colors = unq(a.args.colors);
+    }
+    if (typeof a.name === 'string') a.name = a.name.replace(/^['"]+|['"]+$/g, '').trim();
     if (a.action === 'list') return text(fs.readdirSync(LIB).filter(f => f.endsWith('.json')).map(f => { const j = JSON.parse(fs.readFileSync(path.join(LIB, f), 'utf8')); return { name: j.name, description: j.description, uses: j.uses || 0 }; }));
-    if (!a.name) return fail('name required');
+    if (!a.name) return fail('name required: pass it at the top level next to action, e.g. {"action": "run", "name": "reel_R05_eye_focus", "args": {...}}');
     if (a.action === 'save') { if (!a.code) return fail('code required'); fs.writeFileSync(file(a.name), JSON.stringify({ name: a.name, description: a.description || '', code: a.code, saved: new Date().toISOString(), uses: 0 }, null, 1)); return text({ saved: a.name }); }
     if (!fs.existsSync(file(a.name))) return fail('no such script: ' + a.name);
     const j = JSON.parse(fs.readFileSync(file(a.name), 'utf8'));
